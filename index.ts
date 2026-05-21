@@ -18,13 +18,26 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-/**
- * Ponto de entrada da extensão.
- *
- * Ferramentas e comandos serão registrados nas fases seguintes (Fase 5–7 do ROADMAP).
- */
-export default function piCodegraph(_pi: ExtensionAPI): void {
-  // Fase 5: registrar ferramentas (codegraph_status, codegraph_search, etc.)
+import { registerCodegraphStatusTool } from "./src/tools/status.js";
+import { registerCodegraphSearchTool } from "./src/tools/search.js";
+import { registerCodegraphFilesTool } from "./src/tools/files.js";
+import { registerCodegraphContextTool } from "./src/tools/context.js";
+import { registerCodegraphInitTool } from "./src/tools/init.js";
+import { registerCodegraphIndexTool } from "./src/tools/index.js";
+import { registerCodegraphSyncTool } from "./src/tools/sync.js";
+import { registerCodegraphAffectedTool } from "./src/tools/affected.js";
+
+export default function piCodegraph(pi: ExtensionAPI): void {
+  // Fase 5: registrar ferramentas
+  registerCodegraphStatusTool(pi);
+  registerCodegraphSearchTool(pi);
+  registerCodegraphFilesTool(pi);
+  registerCodegraphContextTool(pi);
+  registerCodegraphInitTool(pi);
+  registerCodegraphIndexTool(pi);
+  registerCodegraphSyncTool(pi);
+  registerCodegraphAffectedTool(pi);
+
   // Fase 6: adicionar hook before_agent_start para orientação contextual
   // Fase 7: registrar comandos slash (/codegraph-status, /codegraph-init, /codegraph-index)
 }
