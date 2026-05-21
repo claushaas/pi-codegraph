@@ -26,6 +26,7 @@ import { registerCodegraphInitTool } from "./src/tools/init.js";
 import { registerCodegraphIndexTool } from "./src/tools/index.js";
 import { registerCodegraphSyncTool } from "./src/tools/sync.js";
 import { registerCodegraphAffectedTool } from "./src/tools/affected.js";
+import { hasCodegraph, CODEGRAPH_READY_GUIDANCE, CODEGRAPH_MISSING_GUIDANCE } from "./src/guidance.js";
 
 export default function piCodegraph(pi: ExtensionAPI): void {
   // Fase 5: registrar ferramentas
@@ -38,6 +39,17 @@ export default function piCodegraph(pi: ExtensionAPI): void {
   registerCodegraphSyncTool(pi);
   registerCodegraphAffectedTool(pi);
 
-  // Fase 6: adicionar hook before_agent_start para orientação contextual
+  // Fase 6: orientação contextual do agente
+  pi.on("before_agent_start", async (_event, ctx) => {
+    const ready = await hasCodegraph(ctx.cwd);
+    const guidance = ready ? CODEGRAPH_READY_GUIDANCE : CODEGRAPH_MISSING_GUIDANCE;
+
+    // Injeta orientação no final do system prompt (chained)
+    const current = ctx.getSystemPrompt();
+    return {
+      systemPrompt: `${current}\n\n${guidance}`,
+    };
+  });
+
   // Fase 7: registrar comandos slash (/codegraph-status, /codegraph-init, /codegraph-index)
 }
