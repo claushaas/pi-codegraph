@@ -35,9 +35,9 @@ export interface CodegraphInitInput { path?: string; index?: boolean; interactiv
 export interface CodegraphIndexInput { path?: string; force?: boolean; quiet?: boolean }
 export interface CodegraphSyncInput { path?: string; quiet?: boolean }
 export interface CodegraphSearchInput { query: string; kind?: string; limit?: number; path?: string }
-export interface CodegraphFilesInput { path?: string; format?: string; filter?: string; maxDepth?: number }
+export interface CodegraphFilesInput { path?: string; format?: string; filter?: string; pattern?: string; maxDepth?: number }
 export interface CodegraphContextInput { task: string; path?: string; format?: string; maxNodes?: number }
-export interface CodegraphAffectedInput { files?: string[]; stdin?: string; depth?: number; filter?: string; json?: boolean; quiet?: boolean }
+export interface CodegraphAffectedInput { path?: string; files?: string[]; stdin?: string; depth?: number; filter?: string; json?: boolean; quiet?: boolean }
 
 // --- Init ---
 
@@ -84,8 +84,10 @@ export const CodegraphFilesParams = Type.Object({
   path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
   /** Output format. */
   format: Type.Optional(FormatEnum),
-  /** Glob pattern to filter files. */
-  filter: Type.Optional(Type.String({ description: "Glob pattern to filter files (e.g., 'src/**')" })),
+  /** Filter to files under this directory. */
+  filter: Type.Optional(Type.String({ description: "Filter to files under this directory" })),
+  /** Glob pattern to match files. */
+  pattern: Type.Optional(Type.String({ description: "Glob pattern to match files (e.g., '*.ts')" })),
   /** Maximum directory depth. */
   maxDepth: Type.Optional(Type.Number({ minimum: 1, maximum: 50, description: "Maximum directory depth" })),
 });
@@ -105,6 +107,7 @@ export const CodegraphContextParams = Type.Object({
 // --- Affected ---
 
 export const CodegraphAffectedParams = Type.Object({
+  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
   /** Lista de arquivos alterados. */
   files: Type.Optional(Type.Array(Type.String(), { description: "List of changed files" })),
   /** String para stdin (alternativa a files, para pipe). */
@@ -186,15 +189,16 @@ export function buildSearchArgs(params: CodegraphSearchInput): string[] {
   flag(args, "--kind", params.kind);
   flag(args, "--limit", params.limit);
   args.push("--json");
-  optPath(args, params.path);
+  flag(args, "--path", params.path);
   return args;
 }
 
 export function buildFilesArgs(params: CodegraphFilesInput): string[] {
   const args = ["files"];
-  optPath(args, params.path);
+  flag(args, "--path", params.path);
   flag(args, "--format", params.format);
   flag(args, "--filter", params.filter);
+  flag(args, "--pattern", params.pattern);
   flag(args, "--max-depth", params.maxDepth);
   args.push("--json");
   return args;
@@ -202,7 +206,7 @@ export function buildFilesArgs(params: CodegraphFilesInput): string[] {
 
 export function buildContextArgs(params: CodegraphContextInput): string[] {
   const args = ["context", params.task];
-  optPath(args, params.path);
+  flag(args, "--path", params.path);
   flag(args, "--format", params.format);
   flag(args, "--max-nodes", params.maxNodes);
   return args;
@@ -210,6 +214,8 @@ export function buildContextArgs(params: CodegraphContextInput): string[] {
 
 export function buildAffectedArgs(params: CodegraphAffectedInput): string[] {
   const args = ["affected"];
+
+  flag(args, "--path", params.path);
 
   if (params.files && params.files.length > 0) {
     args.push(...params.files);

@@ -133,15 +133,15 @@ describe("buildSearchArgs", () => {
   });
 
   it("inclui path após --json", () => {
-    expect(buildSearchArgs({ query: "bar", path: "/src" })).toEqual(["query", "bar", "--json", "/src"]);
+    expect(buildSearchArgs({ query: "bar", path: "/src" })).toEqual(["query", "bar", "--json", "--path", "/src"]);
   });
 
   it("sempre termina com --json (antes do path opcional)", () => {
     const args = buildSearchArgs({ query: "x", kind: "class", limit: 5, path: "/p" });
-    // --json deve vir antes do path posicional
+    // --json deve vir antes de --path
     expect(args).toContain("--json");
     const jsonIdx = args.indexOf("--json");
-    const pathIdx = args.indexOf("/p");
+    const pathIdx = args.indexOf("--path");
     expect(jsonIdx).toBeLessThan(pathIdx);
   });
 });
@@ -160,8 +160,8 @@ describe("buildFilesArgs", () => {
     expect(args).toEqual(["files", "--format", "json", "--filter", "src/**", "--max-depth", "3", "--json"]);
   });
 
-  it("inclui path como primeiro argumento", () => {
-    expect(buildFilesArgs({ path: "./lib" })).toEqual(["files", "./lib", "--json"]);
+  it("inclui path como --path flag", () => {
+    expect(buildFilesArgs({ path: "./lib" })).toEqual(["files", "--path", "./lib", "--json"]);
   });
 
   it("omite flags undefined", () => {
@@ -183,8 +183,8 @@ describe("buildContextArgs", () => {
     expect(args).toEqual(["context", "explain auth", "--format", "markdown", "--max-nodes", "20"]);
   });
 
-  it("inclui path", () => {
-    expect(buildContextArgs({ task: "t", path: "/p" })).toEqual(["context", "t", "/p"]);
+  it("inclui path como --path flag", () => {
+    expect(buildContextArgs({ task: "t", path: "/p" })).toEqual(["context", "t", "--path", "/p"]);
   });
 });
 
