@@ -58,6 +58,7 @@ function createMockPi(): MockPi {
       execCalls.push({ cmd: _cmd, args: _args, opts: _opts });
       return { stdout: "CodeGraph v0.7.10\n1 language, 42 nodes, 84 edges", stderr: "", code: 0 };
     }),
+    sendMessage: vi.fn(),
     registerTool: vi.fn(),
     registerCommand: vi.fn((name: string, def: { description: string; handler: Function }) => {
       registeredCommands.set(name, def);
@@ -76,7 +77,7 @@ function createMockPi(): MockPi {
 // ---------------------------------------------------------------------------
 
 describe("registro de comandos slash", () => {
-  it("registra /codegraph-status, /codegraph-init, /codegraph-index", async () => {
+  it("registra /codegraph-status, /codegraph-init, /codegraph-index, /codegraph-sync", async () => {
     const { pi, registeredCommands } = createMockPi();
     const mod = await import("../index.js");
     mod.default(pi);
@@ -84,6 +85,7 @@ describe("registro de comandos slash", () => {
     expect(registeredCommands.has("codegraph-status")).toBe(true);
     expect(registeredCommands.has("codegraph-init")).toBe(true);
     expect(registeredCommands.has("codegraph-index")).toBe(true);
+    expect(registeredCommands.has("codegraph-sync")).toBe(true);
   });
 
   it("cada comando tem description e handler", async () => {
@@ -134,6 +136,23 @@ describe("/codegraph-status", () => {
     expect(ui.notify).toHaveBeenCalled();
   });
 
+  it("exibe resultado persistente no histórico", async () => {
+    const { pi, registeredCommands } = createMockPi();
+    const mod = await import("../index.js");
+    mod.default(pi);
+
+    const ctx = createMockCtx({ cwd: "/my/project" });
+    const cmd = registeredCommands.get("codegraph-status")!;
+    await cmd.handler("", ctx);
+
+    expect(pi.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      customType: "codegraph-status",
+      content: expect.stringContaining("CodeGraph v0.7.10"),
+      display: true,
+      details: expect.objectContaining({ cwd: "/my/project", level: "info" }),
+    }));
+  });
+
   it("notifica warning quando CodeGraph não inicializado", async () => {
     const { pi, registeredCommands } = createMockPi();
     const mod = await import("../index.js");
@@ -153,8 +172,13 @@ describe("/codegraph-status", () => {
 
     const calls = (ui.notify as ReturnType<typeof vi.fn>).mock.calls;
     const warningCall = calls.find((c: unknown[]) => (c[0] as string).includes("not initialized"));
-    // Either the warning message or the error fallback
-    expect(calls.length).toBeGreaterThan(0);
+    expect(warningCall).toBeDefined();
+    expect(pi.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      customType: "codegraph-status",
+      content: expect.stringContaining("not initialized"),
+      display: true,
+      details: expect.objectContaining({ level: "warning" }),
+    }));
   });
 });
 
@@ -240,6 +264,58 @@ describe("/codegraph-index", () => {
       (c[0] as string).includes("not initialized"),
     );
     expect(warningCall).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// /codegraph-sync
+// ---------------------------------------------------------------------------
+
+describe("/codegraph-sync", () => {
+  it("executa codegraph sync no ctx.cwd", async () => {
+    const { pi, registeredCommands } = createMockPi();
+    const mod = await import("../index.js");
+    mod.default(pi);
+
+    const { mkdtemp, rm, mkdir } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const tmp = await mkdtemp(join(tmpdir(), "pi-codegraph-sync-cmd-"));
+    await mkdir(join(tmp, ".codegraph"));
+
+    try {
+      const ctx = createMockCtx({ cwd: tmp });
+      const cmd = registeredCommands.get("codegraph-sync")!;
+      await cmd.handler("", ctx);
+
+      const syncCall = (pi.exec as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => (c as string[])[1]?.[0] === "sync",
+      );
+      expect(syncCall).toBeDefined();
+      if (syncCall) {
+        expect(syncCall[1]).toContain(tmp);
+        expect(syncCall[1]).toContain("--quiet");
+      }
+    } finally {
+      await rm(tmp, { recursive: true, force: true }).catch(() => {});
+    }
+  });
+
+  it("avisa se .codegraph/ não existe", async () => {
+    const { pi, registeredCommands } = createMockPi();
+    const mod = await import("../index.js");
+    mod.default(pi);
+
+    const ctx = createMockCtx({ cwd: "/tmp/nonexistent-project-sync-xyz" });
+    const cmd = registeredCommands.get("codegraph-sync")!;
+    await cmd.handler("", ctx);
+
+    expect(pi.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      customType: "codegraph-sync",
+      content: expect.stringContaining("not initialized"),
+      display: true,
+      details: expect.objectContaining({ command: "sync", level: "warning" }),
+    }));
   });
 });
 

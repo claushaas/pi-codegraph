@@ -31,8 +31,10 @@ import {
   registerCodegraphStatusCommand,
   registerCodegraphInitCommand,
   registerCodegraphIndexCommand,
+  registerCodegraphSyncCommand,
   registerSessionStartStatus,
 } from "./src/commands.js";
+import { registerCodegraphAutoSync } from "./src/auto-sync.js";
 
 export default function piCodegraph(pi: ExtensionAPI): void {
   // Fase 5: registrar ferramentas
@@ -45,7 +47,9 @@ export default function piCodegraph(pi: ExtensionAPI): void {
   registerCodegraphSyncTool(pi);
   registerCodegraphAffectedTool(pi);
 
-  // Fase 6: orientação contextual do agente
+  // Fase 6: sincronização automática e orientação contextual do agente
+  registerCodegraphAutoSync(pi);
+
   pi.on("before_agent_start", async (_event, ctx) => {
     const ready = await hasCodegraph(ctx.cwd);
     const guidance = ready ? CODEGRAPH_READY_GUIDANCE : CODEGRAPH_MISSING_GUIDANCE;
@@ -61,5 +65,6 @@ export default function piCodegraph(pi: ExtensionAPI): void {
   registerCodegraphStatusCommand(pi);
   registerCodegraphInitCommand(pi);
   registerCodegraphIndexCommand(pi);
+  registerCodegraphSyncCommand(pi);
   registerSessionStartStatus(pi);
 }

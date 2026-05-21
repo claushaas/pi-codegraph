@@ -29,6 +29,48 @@ pi -e .
 pi install npm:pi-codegraph
 ```
 
+## Getting Started
+
+### 1. Instalar a extensão
+
+```bash
+cd ~/.pi/agent/extensions
+# Clone ou copie o diretório pi-codegraph para cá
+cd pi-codegraph
+npm install
+```
+
+### 2. Inicializar CodeGraph no projeto
+
+```bash
+cd seu-projeto
+codegraph init .
+codegraph index .
+```
+
+### 3. Iniciar o Pi com a extensão
+
+```bash
+cd seu-projeto
+pi -e ~/.pi/agent/extensions/pi-codegraph
+```
+
+No Pi, o agente receberá orientação automática para usar as ferramentas `codegraph_*`.
+
+### 4. Exemplo de interação
+
+```
+> onde está implementada a função de login?
+
+(agente usa codegraph_search para "login")
+→ Encontrados 3 símbolos: function login (src/auth.ts:42), ...
+
+(agente usa codegraph_context para "login flow")
+→ [código relevante de src/auth.ts, src/session.ts]
+
+(agente usa read para confirmar linhas exatas antes de editar)
+```
+
 ## Ferramentas registradas no Pi
 
 | Ferramenta | CLI equivalente | Descrição |
@@ -49,10 +91,21 @@ pi install npm:pi-codegraph
 | `/codegraph-status` | Exibe status do CodeGraph no projeto atual |
 | `/codegraph-init` | Inicializa CodeGraph (com confirmação) |
 | `/codegraph-index` | Indexa o projeto (com confirmação) |
+| `/codegraph-sync` | Atualiza incrementalmente o índice CodeGraph |
 
 ## Uso pelo agente
 
 Quando o diretório `.codegraph/` existe no projeto, a extensão injeta instruções no system prompt para que o agente prefira as ferramentas `codegraph_*` em tarefas de exploração (localizar símbolos, entender arquitetura, mapear fluxo), e use `read`/`edit` para confirmação e edição.
+
+## Atualização do índice
+
+A extensão mantém o DB do CodeGraph atualizado de três formas:
+
+- `/codegraph-sync` executa `codegraph sync` manualmente no projeto atual.
+- No início de cada turno do agente, se `.codegraph/` existir, a extensão roda `codegraph sync --quiet`.
+- Depois de ferramentas que alteram arquivos (`edit` e `write`) concluírem com sucesso, a extensão roda `codegraph sync --quiet` novamente.
+
+Para rebuild completo, use `/codegraph-index` ou `codegraph index .`.
 
 ## Troubleshooting
 
