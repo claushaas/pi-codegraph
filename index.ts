@@ -27,6 +27,12 @@ import { registerCodegraphIndexTool } from "./src/tools/index.js";
 import { registerCodegraphSyncTool } from "./src/tools/sync.js";
 import { registerCodegraphAffectedTool } from "./src/tools/affected.js";
 import { hasCodegraph, CODEGRAPH_READY_GUIDANCE, CODEGRAPH_MISSING_GUIDANCE } from "./src/guidance.js";
+import {
+  registerCodegraphStatusCommand,
+  registerCodegraphInitCommand,
+  registerCodegraphIndexCommand,
+  registerSessionStartStatus,
+} from "./src/commands.js";
 
 export default function piCodegraph(pi: ExtensionAPI): void {
   // Fase 5: registrar ferramentas
@@ -51,5 +57,9 @@ export default function piCodegraph(pi: ExtensionAPI): void {
     };
   });
 
-  // Fase 7: registrar comandos slash (/codegraph-status, /codegraph-init, /codegraph-index)
+  // Fase 7: comandos slash e UX
+  registerCodegraphStatusCommand(pi);
+  registerCodegraphInitCommand(pi);
+  registerCodegraphIndexCommand(pi);
+  registerSessionStartStatus(pi);
 }
