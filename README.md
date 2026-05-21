@@ -101,6 +101,56 @@ export CODEGRAPH_ALLOW_UNSAFE_NODE=1
 
 Veja a [issue #81](https://github.com/colbymchenry/codegraph/issues/81) do CodeGraph para detalhes.
 
+## Smoke tests
+
+Para validar manualmente se a extensão está funcionando:
+
+### Projeto sem CodeGraph
+
+```bash
+mkdir -p /tmp/pi-codegraph-smoke-empty
+cd /tmp/pi-codegraph-smoke-empty
+printf 'export function hello() { return "world"; }\n' > hello.ts
+pi -e /Users/claus/.pi/agent/extensions/pi-codegraph
+```
+
+No Pi:
+1. `/codegraph-status` → deve sugerir inicialização
+2. Peça ao agente: "find the hello function" → deve sugerir `codegraph_init`
+3. `/codegraph-init` → confirme e inicialize
+
+### Projeto com CodeGraph inicializado
+
+```bash
+mkdir -p /tmp/pi-codegraph-smoke-ready
+cd /tmp/pi-codegraph-smoke-ready
+printf 'export function hello() { return "world"; }\n' > hello.ts
+printf 'import { hello } from "./hello";\nhello();\n' > main.ts
+codegraph init .
+codegraph index .
+pi -e /Users/claus/.pi/agent/extensions/pi-codegraph
+```
+
+No Pi:
+1. `/codegraph-status` → deve mostrar estatísticas do índice
+2. Peça: "search for the hello function" → agente deve usar `codegraph_search`
+3. Peça: "find tests affected by changes in hello.ts" → agente deve usar `codegraph_affected`
+4. Footer do Pi deve mostrar "CodeGraph: ready"
+
+### Verificações manuais
+
+- [ ] Extensão carrega sem erros (`pi -e .`)
+- [ ] `/codegraph-status` funciona em ambos os cenários
+- [ ] `/codegraph-init` confirma antes de executar
+- [ ] `/codegraph-index` confirma e indexa
+- [ ] `codegraph_search` localiza símbolos
+- [ ] `codegraph_context` retorna contexto relevante
+- [ ] `codegraph_files` lista estrutura indexada
+- [ ] `codegraph_affected` retorna arquivos de teste
+- [ ] Saídas grandes são truncadas com mensagem
+- [ ] Nenhuma chamada MCP acontece
+- [ ] Agente recebe orientação no system prompt quando `.codegraph/` existe
+
 ## Variáveis de ambiente
 
 | Variável | Descrição | Padrão |
