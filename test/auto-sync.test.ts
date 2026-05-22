@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -6,6 +6,7 @@ import type {
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
+import { shouldIgnoreFileChange } from "../src/auto-sync.js";
 
 interface MockUi {
   notify: ReturnType<typeof vi.fn>;
@@ -55,6 +56,15 @@ async function waitFor(condition: () => boolean): Promise<void> {
   for (let attempt = 0; attempt < 50; attempt++) {
     if (condition()) return;
     await flushAsync();
+  }
+
+  throw new Error("condition was not met");
+}
+
+async function waitForEventually(condition: () => boolean): Promise<void> {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (condition()) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
   }
 
   throw new Error("condition was not met");
@@ -248,6 +258,49 @@ describe("auto sync", () => {
       });
       await Promise.all([turnStartRun, fileMutationRun]);
       expect(pi.exec).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("ignora mudanças de filesystem em diretórios ruidosos", () => {
+    expect(shouldIgnoreFileChange(".codegraph/index.db")).toBe(true);
+    expect(shouldIgnoreFileChange(".git/index")).toBe(true);
+    expect(shouldIgnoreFileChange("node_modules/pkg/index.js")).toBe(true);
+    expect(shouldIgnoreFileChange("dist/index.js")).toBe(true);
+    expect(shouldIgnoreFileChange("coverage/report.json")).toBe(true);
+    expect(shouldIgnoreFileChange("src/index.ts")).toBe(false);
+    expect(shouldIgnoreFileChange(null)).toBe(false);
+  });
+
+  it("sincroniza após save no filesystem enquanto sessão está aberta", async () => {
+    await withCodegraphDir(async (cwd) => {
+      const { pi, eventHandlers } = createMockPi();
+      const mod = await import("../index.js");
+      mod.default(pi);
+
+      const sessionStart = (eventHandlers.get("session_start") ?? [])[0];
+      const sessionShutdown = (eventHandlers.get("session_shutdown") ?? [])[0];
+      const ctx = createMockCtx(cwd);
+
+      await sessionStart?.({}, ctx);
+      await writeFile(
+        join(cwd, "changed.ts"),
+        "export const changed = true;\n",
+      );
+
+      try {
+        await waitForEventually(
+          () =>
+            (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls
+              .length === 1,
+        );
+        expect(pi.exec).toHaveBeenCalledWith(
+          process.execPath,
+          expect.arrayContaining(["sync", cwd, "--quiet"]),
+          expect.objectContaining({ timeout: 30000 }),
+        );
+      } finally {
+        await sessionShutdown?.({}, ctx);
+      }
     });
   });
 
