@@ -331,6 +331,9 @@ describe("edge cases", () => {
 
     expect(result).toHaveProperty("content");
     expect(result.details.stdinMode).toBe(true);
+    expect(mock.execCalls.at(-1)?.cmd).toBe("bash");
+    expect((mock.execCalls.at(-1)?.args[1] as string)).toContain("@colbymchenry/codegraph");
+    expect((mock.execCalls.at(-1)?.args[1] as string)).toContain("affected");
   });
 
   it("codegraph_files parseia JSON e formata saída", async () => {

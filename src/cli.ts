@@ -10,7 +10,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { getCodegraphBin, TIMEOUTS } from "./config.js";
+import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -73,14 +73,14 @@ export async function runCodegraph(
   options: RunCodegraphOptions = {},
   signal?: AbortSignal,
 ): Promise<RunCodegraphResult> {
-  const bin = getCodegraphBin();
+  const invocation = getCodegraphInvocation();
   const timeout = options.timeout ?? TIMEOUTS.quick;
 
   // pi.exec aceita cwd? Vamos verificar a API. Se não aceitar diretamente,
   // documentamos que a ferramenta deve resolver paths manualmente e o cwd
   // é controlado pelo Pi durante a execução da tool.
   // Por enquanto, passamos apenas signal e timeout.
-  const result = await pi.exec(bin, args, { signal, timeout });
+  const result = await pi.exec(invocation.bin, [...invocation.prefixArgs, ...args], { signal, timeout });
 
   const { stdout, stderr, code } = result;
 

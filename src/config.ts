@@ -3,9 +3,43 @@
  * Resolve o binário do CodeGraph e timeouts padrão.
  */
 
-/** Caminho para o binário codegraph. Respeita PI_CODEGRAPH_BIN, fallback para "codegraph". */
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+
+export interface CodegraphInvocation {
+  /** Executável passado para pi.exec(). */
+  bin: string;
+  /** Argumentos que devem preceder os argumentos reais da CLI CodeGraph. */
+  prefixArgs: string[];
+}
+
+function resolveBundledCodegraphCli(): string | undefined {
+  try {
+    return require.resolve("@colbymchenry/codegraph/dist/bin/codegraph.js");
+  } catch {
+    return undefined;
+  }
+}
+
+/** Caminho para a CLI codegraph. Para executar via pi.exec(), prefira getCodegraphInvocation(). */
 export function getCodegraphBin(): string {
-  return process.env.PI_CODEGRAPH_BIN || "codegraph";
+  return process.env.PI_CODEGRAPH_BIN || resolveBundledCodegraphCli() || "codegraph";
+}
+
+/** Invocação portátil: executa a CLI JS empacotada via o Node atual quando ela estiver disponível. */
+export function getCodegraphInvocation(): CodegraphInvocation {
+  const configuredBin = process.env.PI_CODEGRAPH_BIN;
+  if (configuredBin) {
+    return { bin: configuredBin, prefixArgs: [] };
+  }
+
+  const bundledCli = resolveBundledCodegraphCli();
+  if (bundledCli) {
+    return { bin: process.execPath, prefixArgs: [bundledCli] };
+  }
+
+  return { bin: "codegraph", prefixArgs: [] };
 }
 
 /** Timeouts padrão por classe de operação (ms). */

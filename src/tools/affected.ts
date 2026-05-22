@@ -9,11 +9,14 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { CodegraphAffectedParams, buildAffectedArgs, type CodegraphAffectedInput } from "../schemas.js";
 import { runCodegraph, CodegraphCliError } from "../cli.js";
 import { formatToolOutput, TOOL_OUTPUT_MAX_BYTES_LABEL } from "../truncate.js";
-import { TIMEOUTS } from "../config.js";
-import { resolve } from "node:path";
-import { writeFile, mkdtemp } from "node:fs/promises";
+import { getCodegraphInvocation, TIMEOUTS } from "../config.js";
+import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
 
 export function registerCodegraphAffectedTool(pi: ExtensionAPI): void {
   pi.registerTool({
@@ -50,9 +53,12 @@ export function registerCodegraphAffectedTool(pi: ExtensionAPI): void {
         await writeFile(tmpFile, params.stdin!, "utf8");
 
         try {
-          // Fall back to bash-based execution for stdin mode
-          const cwd = resolve(ctx.cwd, ".");
-          const cmd = `cat ${tmpFile} | codegraph affected --stdin`;
+          // Fall back to bash-based execution for stdin mode.
+          const invocation = getCodegraphInvocation();
+          const codegraphCommand = [invocation.bin, ...invocation.prefixArgs, "affected", "--stdin"]
+            .map(shellQuote)
+            .join(" ");
+          const cmd = `${codegraphCommand} < ${shellQuote(tmpFile)}`;
           const result = await pi.exec("bash", ["-c", cmd], { signal, timeout: TIMEOUTS.query });
 
           if (result.code !== 0) {
@@ -71,7 +77,7 @@ export function registerCodegraphAffectedTool(pi: ExtensionAPI): void {
           };
         } finally {
           // Cleanup temp file (best effort)
-          try { /* ignore cleanup errors */ } catch { /* ignore */ }
+          await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
         }
       }
 

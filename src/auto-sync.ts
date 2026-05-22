@@ -7,13 +7,29 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { getCodegraphBin, TIMEOUTS } from "./config.js";
+import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 import { hasCodegraph } from "./guidance.js";
 
 const MUTATING_TOOLS = new Set(["edit", "write"]);
 
 interface AutoSyncState {
   inFlight: Map<string, Promise<void>>;
+  pendingFileMutation: Set<string>;
+}
+
+async function performSync(pi: ExtensionAPI, ctx: ExtensionContext, cwd: string): Promise<void> {
+  ctx.ui.setStatus?.("codegraph", "CodeGraph: syncing…");
+
+  const invocation = getCodegraphInvocation();
+  const result = await pi.exec(invocation.bin, [...invocation.prefixArgs, "sync", cwd, "--quiet"], {
+    signal: ctx.signal,
+    timeout: TIMEOUTS.query,
+  });
+
+  if (result.code !== 0) {
+    const details = result.stderr.trim() || result.stdout.trim() || "(no output)";
+    throw new Error(`codegraph sync failed (code ${result.code}): ${details}`);
+  }
 }
 
 async function runAutoSync(
@@ -28,6 +44,10 @@ async function runAutoSync(
 
   const existing = state.inFlight.get(cwd);
   if (existing) {
+    if (reason === "file_mutation") {
+      state.pendingFileMutation.add(cwd);
+    }
+
     try {
       await existing;
     } catch {
@@ -36,38 +56,40 @@ async function runAutoSync(
     return;
   }
 
-  ctx.ui.setStatus?.("codegraph", "CodeGraph: syncing…");
+  let shouldNotifyFileMutationFailure = reason === "file_mutation";
 
   const promise = (async () => {
-    const result = await pi.exec(getCodegraphBin(), ["sync", cwd, "--quiet"], {
-      signal: ctx.signal,
-      timeout: TIMEOUTS.query,
-    });
+    try {
+      while (true) {
+        state.pendingFileMutation.delete(cwd);
+        await performSync(pi, ctx, cwd);
 
-    if (result.code !== 0) {
-      const details = result.stderr.trim() || result.stdout.trim() || "(no output)";
-      throw new Error(`codegraph sync failed (code ${result.code}): ${details}`);
+        if (!state.pendingFileMutation.has(cwd)) break;
+        shouldNotifyFileMutationFailure = true;
+      }
+
+      ctx.ui.setStatus?.("codegraph", "CodeGraph: ready");
+    } catch (err) {
+      ctx.ui.setStatus?.("codegraph", "CodeGraph: sync failed");
+      if (shouldNotifyFileMutationFailure || state.pendingFileMutation.has(cwd)) {
+        ctx.ui.notify?.(`CodeGraph sync failed after file change: ${(err as Error).message}`, "warning");
+      }
+    } finally {
+      state.pendingFileMutation.delete(cwd);
     }
-
-    ctx.ui.setStatus?.("codegraph", "CodeGraph: ready");
   })();
 
   state.inFlight.set(cwd, promise);
 
   try {
     await promise;
-  } catch (err) {
-    ctx.ui.setStatus?.("codegraph", "CodeGraph: sync failed");
-    if (reason === "file_mutation") {
-      ctx.ui.notify?.(`CodeGraph sync failed after file change: ${(err as Error).message}`, "warning");
-    }
   } finally {
     state.inFlight.delete(cwd);
   }
 }
 
 export function registerCodegraphAutoSync(pi: ExtensionAPI): void {
-  const state: AutoSyncState = { inFlight: new Map() };
+  const state: AutoSyncState = { inFlight: new Map(), pendingFileMutation: new Set() };
 
   pi.on("before_agent_start", async (_event, ctx) => {
     await runAutoSync(pi, ctx, state, "turn_start");

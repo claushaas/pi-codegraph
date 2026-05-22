@@ -8,7 +8,7 @@
  */
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { getCodegraphBin, TIMEOUTS } from "./config.js";
+import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 import { hasCodegraph } from "./guidance.js";
 
 // ---------------------------------------------------------------------------
@@ -21,7 +21,8 @@ async function execCodegraph(
   args: string[],
   timeout: number,
 ): Promise<string> {
-  const result = await pi.exec(getCodegraphBin(), args, { timeout });
+  const invocation = getCodegraphInvocation();
+  const result = await pi.exec(invocation.bin, [...invocation.prefixArgs, ...args], { timeout });
   if (result.code !== 0) {
     throw new Error(
       `codegraph ${args[0] ?? ""} failed (code ${result.code}): ${result.stderr || result.stdout || "(no output)"}`,

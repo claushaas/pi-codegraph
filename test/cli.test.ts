@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { runCodegraph, CodegraphCliError } from "../src/cli.js";
-import { getCodegraphBin, TIMEOUTS } from "../src/config.js";
+import { getCodegraphBin, getCodegraphInvocation, TIMEOUTS } from "../src/config.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,14 +41,18 @@ describe("getCodegraphBin", () => {
     }
   });
 
-  it("retorna 'codegraph' por padrão", () => {
+  it("usa a CLI empacotada por padrão", () => {
     delete process.env.PI_CODEGRAPH_BIN;
-    expect(getCodegraphBin()).toBe("codegraph");
+    expect(getCodegraphBin()).toContain("@colbymchenry/codegraph");
+    const invocation = getCodegraphInvocation();
+    expect(invocation.bin).toBe(process.execPath);
+    expect(invocation.prefixArgs[0]).toContain("@colbymchenry/codegraph");
   });
 
   it("respeita PI_CODEGRAPH_BIN", () => {
     process.env.PI_CODEGRAPH_BIN = "/usr/local/bin/codegraph-custom";
     expect(getCodegraphBin()).toBe("/usr/local/bin/codegraph-custom");
+    expect(getCodegraphInvocation()).toEqual({ bin: "/usr/local/bin/codegraph-custom", prefixArgs: [] });
   });
 });
 
@@ -62,8 +66,9 @@ describe("runCodegraph (sucesso)", () => {
     await runCodegraph(pi, ["status", "."]);
     expect(pi.exec).toHaveBeenCalledOnce();
     const [bin, args, opts] = (pi.exec as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(bin).toBe("codegraph");
-    expect(args).toEqual(["status", "."]);
+    expect(bin).toBe(process.execPath);
+    expect(args[0]).toContain("@colbymchenry/codegraph");
+    expect(args.slice(1)).toEqual(["status", "."]);
     expect(opts).toMatchObject({ timeout: TIMEOUTS.quick });
   });
 

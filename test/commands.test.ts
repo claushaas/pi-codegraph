@@ -115,7 +115,7 @@ describe("/codegraph-status", () => {
     await cmd.handler("", ctx);
 
     const statusCall = (pi.exec as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: unknown[]) => (c as string[])[1]?.[0] === "status",
+      (c: unknown[]) => ((c as unknown[])[1] as string[])?.includes("status"),
     );
     expect(statusCall).toBeDefined();
     if (statusCall) {
@@ -213,7 +213,7 @@ describe("/codegraph-init", () => {
     // confirm foi chamado, mas exec não (porque cancelou)
     expect(ui.confirm).toHaveBeenCalled();
     const initCall = (pi.exec as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: unknown[]) => (c as string[])[1]?.[0] === "init",
+      (c: unknown[]) => ((c as unknown[])[1] as string[])?.includes("init"),
     );
     expect(initCall).toBeUndefined();
   });
@@ -289,7 +289,7 @@ describe("/codegraph-sync", () => {
       await cmd.handler("", ctx);
 
       const syncCall = (pi.exec as ReturnType<typeof vi.fn>).mock.calls.find(
-        (c: unknown[]) => (c as string[])[1]?.[0] === "sync",
+        (c: unknown[]) => ((c as unknown[])[1] as string[])?.includes("sync"),
       );
       expect(syncCall).toBeDefined();
       if (syncCall) {
