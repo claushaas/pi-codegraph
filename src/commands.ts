@@ -7,7 +7,10 @@
  * - /codegraph-sync   : atualiza incrementalmente o índice
  */
 
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionCommandContext,
+} from "@earendil-works/pi-coding-agent";
 import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 import { hasCodegraph } from "./guidance.js";
 
@@ -22,7 +25,11 @@ async function execCodegraph(
   timeout: number,
 ): Promise<string> {
   const invocation = getCodegraphInvocation();
-  const result = await pi.exec(invocation.bin, [...invocation.prefixArgs, ...args], { timeout });
+  const result = await pi.exec(
+    invocation.bin,
+    [...invocation.prefixArgs, ...args],
+    { timeout },
+  );
   if (result.code !== 0) {
     throw new Error(
       `codegraph ${args[0] ?? ""} failed (code ${result.code}): ${result.stderr || result.stdout || "(no output)"}`,
@@ -34,12 +41,17 @@ async function execCodegraph(
 /** Extrai a primeira linha significante de uma saída para notificação. */
 function firstLine(output: string, maxLen = 120): string {
   const line = output.split("\n").find((l) => l.trim().length > 0) ?? output;
-  return line.length > maxLen ? line.slice(0, maxLen) + "…" : line;
+  return line.length > maxLen ? `${line.slice(0, maxLen)}…` : line;
 }
+
+const ANSI_ESCAPE_PATTERN = new RegExp(
+  `${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`,
+  "g",
+);
 
 /** Remove ANSI escape codes emitted by the CodeGraph CLI. */
 function stripAnsi(output: string): string {
-  return output.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, "");
+  return output.replace(ANSI_ESCAPE_PATTERN, "");
 }
 
 /** Exibe saída de comando de forma persistente, não apenas como toast transitório. */
@@ -70,16 +82,30 @@ export function registerCodegraphStatusCommand(pi: ExtensionAPI): void {
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) {
         try {
-          const output = await execCodegraph(pi, ["status", ctx.cwd], TIMEOUTS.quick);
+          const output = await execCodegraph(
+            pi,
+            ["status", ctx.cwd],
+            TIMEOUTS.quick,
+          );
           showCommandOutput(pi, ctx, "status", output, "info");
         } catch (err) {
-          showCommandOutput(pi, ctx, "status", `CodeGraph: ${(err as Error).message}`, "error");
+          showCommandOutput(
+            pi,
+            ctx,
+            "status",
+            `CodeGraph: ${(err as Error).message}`,
+            "error",
+          );
         }
         return;
       }
 
       try {
-        const output = await execCodegraph(pi, ["status", ctx.cwd], TIMEOUTS.quick);
+        const output = await execCodegraph(
+          pi,
+          ["status", ctx.cwd],
+          TIMEOUTS.quick,
+        );
         showCommandOutput(pi, ctx, "status", output, "info");
       } catch (err) {
         const msg = (err as Error).message;
@@ -92,7 +118,13 @@ export function registerCodegraphStatusCommand(pi: ExtensionAPI): void {
             "warning",
           );
         } else {
-          showCommandOutput(pi, ctx, "status", `CodeGraph error: ${msg}`, "error");
+          showCommandOutput(
+            pi,
+            ctx,
+            "status",
+            `CodeGraph error: ${msg}`,
+            "error",
+          );
         }
       }
     },
@@ -108,7 +140,10 @@ export function registerCodegraphInitCommand(pi: ExtensionAPI): void {
     description: "Initialize CodeGraph in the current project",
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) {
-        ctx.ui.notify?.("Run codegraph init in the project directory to initialize.", "info");
+        ctx.ui.notify?.(
+          "Run codegraph init in the project directory to initialize.",
+          "info",
+        );
         return;
       }
 
@@ -145,7 +180,10 @@ export function registerCodegraphInitCommand(pi: ExtensionAPI): void {
           ctx.ui.setStatus?.("codegraph", "CodeGraph: ready");
           ctx.ui.notify("Indexing complete.", "info");
         } else {
-          ctx.ui.notify("Run /codegraph-index later to build the index.", "info");
+          ctx.ui.notify(
+            "Run /codegraph-index later to build the index.",
+            "info",
+          );
         }
       } catch (err) {
         ctx.ui.setStatus?.("codegraph", undefined);
@@ -164,13 +202,19 @@ export function registerCodegraphIndexCommand(pi: ExtensionAPI): void {
     description: "Build/rebuild the CodeGraph index for the current project",
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) {
-        ctx.ui.notify?.("Run codegraph index in the project directory to build the index.", "info");
+        ctx.ui.notify?.(
+          "Run codegraph index in the project directory to build the index.",
+          "info",
+        );
         return;
       }
 
       const initialized = await hasCodegraph(ctx.cwd);
       if (!initialized) {
-        ctx.ui.notify("CodeGraph not initialized. Run /codegraph-init first.", "warning");
+        ctx.ui.notify(
+          "CodeGraph not initialized. Run /codegraph-init first.",
+          "warning",
+        );
         return;
       }
 
@@ -200,7 +244,8 @@ export function registerCodegraphIndexCommand(pi: ExtensionAPI): void {
 
 export function registerCodegraphSyncCommand(pi: ExtensionAPI): void {
   pi.registerCommand("codegraph-sync", {
-    description: "Incrementally sync the CodeGraph index for the current project",
+    description:
+      "Incrementally sync the CodeGraph index for the current project",
     handler: async (_args, ctx) => {
       const initialized = await hasCodegraph(ctx.cwd);
       if (!initialized) {
@@ -217,12 +262,28 @@ export function registerCodegraphSyncCommand(pi: ExtensionAPI): void {
       ctx.ui.setStatus?.("codegraph", "CodeGraph: syncing…");
 
       try {
-        const output = await execCodegraph(pi, ["sync", ctx.cwd, "--quiet"], TIMEOUTS.query);
+        const output = await execCodegraph(
+          pi,
+          ["sync", ctx.cwd, "--quiet"],
+          TIMEOUTS.query,
+        );
         ctx.ui.setStatus?.("codegraph", "CodeGraph: ready");
-        showCommandOutput(pi, ctx, "sync", output || "CodeGraph sync completed.", "info");
+        showCommandOutput(
+          pi,
+          ctx,
+          "sync",
+          output || "CodeGraph sync completed.",
+          "info",
+        );
       } catch (err) {
         ctx.ui.setStatus?.("codegraph", "CodeGraph: sync failed");
-        showCommandOutput(pi, ctx, "sync", `CodeGraph sync failed: ${(err as Error).message}`, "error");
+        showCommandOutput(
+          pi,
+          ctx,
+          "sync",
+          `CodeGraph sync failed: ${(err as Error).message}`,
+          "error",
+        );
       }
     },
   });
@@ -248,7 +309,7 @@ export function registerSessionStartStatus(pi: ExtensionAPI): void {
 
     // Re-hook: escuta o primeiro agent_start para notificar se não inicializado
     // (evita poluir o startup)
-    const unsub = pi.on("agent_start", async () => {
+    const _unsub = pi.on("agent_start", async () => {
       if (notified) return;
       notified = true;
 

@@ -1,8 +1,12 @@
-import { describe, it, expect } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { hasCodegraph, CODEGRAPH_READY_GUIDANCE, CODEGRAPH_MISSING_GUIDANCE } from "../src/guidance.js";
+import { describe, expect, it } from "vitest";
+import {
+  CODEGRAPH_MISSING_GUIDANCE,
+  CODEGRAPH_READY_GUIDANCE,
+  hasCodegraph,
+} from "../src/guidance.js";
 
 // ---------------------------------------------------------------------------
 // hasCodegraph
@@ -53,7 +57,16 @@ describe("CODEGRAPH_READY_GUIDANCE", () => {
   });
 
   it("menciona usar read depois do CodeGraph", () => {
-    expect(CODEGRAPH_READY_GUIDANCE).toContain("read");
+    expect(CODEGRAPH_READY_GUIDANCE).toContain("Use read only after CodeGraph");
+  });
+
+  it("define CodeGraph como fluxo padrão antes de ferramentas manuais", () => {
+    expect(CODEGRAPH_READY_GUIDANCE).toContain("Default workflow");
+    expect(CODEGRAPH_READY_GUIDANCE).toContain("before grep/find/ls");
+  });
+
+  it("pede justificar quando CodeGraph for pulado", () => {
+    expect(CODEGRAPH_READY_GUIDANCE).toContain("briefly state why");
   });
 
   it("menciona não usar sub-agentes para exploração", () => {

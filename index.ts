@@ -17,24 +17,27 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-
-import { registerCodegraphStatusTool } from "./src/tools/status.js";
-import { registerCodegraphSearchTool } from "./src/tools/search.js";
-import { registerCodegraphFilesTool } from "./src/tools/files.js";
-import { registerCodegraphContextTool } from "./src/tools/context.js";
-import { registerCodegraphInitTool } from "./src/tools/init.js";
-import { registerCodegraphIndexTool } from "./src/tools/index.js";
-import { registerCodegraphSyncTool } from "./src/tools/sync.js";
-import { registerCodegraphAffectedTool } from "./src/tools/affected.js";
-import { hasCodegraph, CODEGRAPH_READY_GUIDANCE, CODEGRAPH_MISSING_GUIDANCE } from "./src/guidance.js";
+import { registerCodegraphAutoSync } from "./src/auto-sync.js";
 import {
-  registerCodegraphStatusCommand,
-  registerCodegraphInitCommand,
   registerCodegraphIndexCommand,
+  registerCodegraphInitCommand,
+  registerCodegraphStatusCommand,
   registerCodegraphSyncCommand,
   registerSessionStartStatus,
 } from "./src/commands.js";
-import { registerCodegraphAutoSync } from "./src/auto-sync.js";
+import {
+  CODEGRAPH_MISSING_GUIDANCE,
+  CODEGRAPH_READY_GUIDANCE,
+  hasCodegraph,
+} from "./src/guidance.js";
+import { registerCodegraphAffectedTool } from "./src/tools/affected.js";
+import { registerCodegraphContextTool } from "./src/tools/context.js";
+import { registerCodegraphFilesTool } from "./src/tools/files.js";
+import { registerCodegraphIndexTool } from "./src/tools/index.js";
+import { registerCodegraphInitTool } from "./src/tools/init.js";
+import { registerCodegraphSearchTool } from "./src/tools/search.js";
+import { registerCodegraphStatusTool } from "./src/tools/status.js";
+import { registerCodegraphSyncTool } from "./src/tools/sync.js";
 
 export default function piCodegraph(pi: ExtensionAPI): void {
   // Fase 5: registrar ferramentas
@@ -52,7 +55,9 @@ export default function piCodegraph(pi: ExtensionAPI): void {
 
   pi.on("before_agent_start", async (_event, ctx) => {
     const ready = await hasCodegraph(ctx.cwd);
-    const guidance = ready ? CODEGRAPH_READY_GUIDANCE : CODEGRAPH_MISSING_GUIDANCE;
+    const guidance = ready
+      ? CODEGRAPH_READY_GUIDANCE
+      : CODEGRAPH_MISSING_GUIDANCE;
 
     // Injeta orientação no final do system prompt (chained)
     const current = ctx.getSystemPrompt();

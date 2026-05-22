@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -8,7 +8,11 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 interface MockPiTools {
   pi: ExtensionAPI;
   registeredTools: Map<string, Record<string, unknown>>;
-  execCalls: Array<{ cmd: string; args: string[]; opts?: Record<string, unknown> }>;
+  execCalls: Array<{
+    cmd: string;
+    args: string[];
+    opts?: Record<string, unknown>;
+  }>;
   setExecResult: (stdout: string, stderr?: string, code?: number) => void;
   setExecError: (stderr: string, code?: number) => void;
 }
@@ -16,14 +20,24 @@ interface MockPiTools {
 /** Cria um mock de ExtensionAPI que captura registerTool e exec. */
 function createMockPi(): MockPiTools {
   const registeredTools = new Map<string, Record<string, unknown>>();
-  const execCalls: Array<{ cmd: string; args: string[]; opts?: Record<string, unknown> }> = [];
+  const execCalls: Array<{
+    cmd: string;
+    args: string[];
+    opts?: Record<string, unknown>;
+  }> = [];
   let execResult = { stdout: "ok", stderr: "", code: 0 };
 
   const pi = {
-    exec: vi.fn(async (_cmd: string, _args: string[], _opts?: Record<string, unknown>) => {
-      execCalls.push({ cmd: _cmd, args: _args, opts: _opts });
-      return { ...execResult };
-    }),
+    exec: vi.fn(
+      async (
+        _cmd: string,
+        _args: string[],
+        _opts?: Record<string, unknown>,
+      ) => {
+        execCalls.push({ cmd: _cmd, args: _args, opts: _opts });
+        return { ...execResult };
+      },
+    ),
     registerTool: vi.fn((def: Record<string, unknown>) => {
       registeredTools.set(def.name as string, def);
     }),
@@ -68,7 +82,10 @@ describe("registro de ferramentas", () => {
     ];
 
     for (const name of expectedTools) {
-      expect(registeredTools.has(name), `ferramenta ${name} não registrada`).toBe(true);
+      expect(
+        registeredTools.has(name),
+        `ferramenta ${name} não registrada`,
+      ).toBe(true);
     }
 
     expect(registeredTools.size).toBe(8);
@@ -94,10 +111,40 @@ describe("registro de ferramentas", () => {
     mod.default(pi);
 
     for (const [name, def] of registeredTools) {
-      expect(typeof def.promptSnippet, `${name}: promptSnippet ausente`).toBe("string");
-      expect(Array.isArray(def.promptGuidelines), `${name}: promptGuidelines não é array`).toBe(true);
-      expect((def.promptGuidelines as string[]).length, `${name}: promptGuidelines vazio`).toBeGreaterThan(0);
+      expect(typeof def.promptSnippet, `${name}: promptSnippet ausente`).toBe(
+        "string",
+      );
+      expect(
+        Array.isArray(def.promptGuidelines),
+        `${name}: promptGuidelines não é array`,
+      ).toBe(true);
+      expect(
+        (def.promptGuidelines as string[]).length,
+        `${name}: promptGuidelines vazio`,
+      ).toBeGreaterThan(0);
     }
+  });
+
+  it("reforça CodeGraph como preferência antes de exploração manual", async () => {
+    const { pi, registeredTools } = createMockPi();
+    const mod = await import("../index.js");
+    mod.default(pi);
+
+    expect(
+      (
+        registeredTools.get("codegraph_search")?.promptGuidelines as string[]
+      ).join("\n"),
+    ).toContain("before grep/find/read");
+    expect(
+      (
+        registeredTools.get("codegraph_context")?.promptGuidelines as string[]
+      ).join("\n"),
+    ).toContain("reading multiple files manually");
+    expect(
+      (
+        registeredTools.get("codegraph_files")?.promptGuidelines as string[]
+      ).join("\n"),
+    ).toContain("before ls/find/tree");
   });
 });
 
@@ -113,7 +160,13 @@ describe("execução das ferramentas", () => {
 
     const tool = registeredTools.get("codegraph_status")!;
     const ctx = { cwd: "/tmp/proj" };
-    const result = await (tool.execute as Function)("id", {}, new AbortController().signal, undefined, ctx);
+    const result = await (tool.execute as Function)(
+      "id",
+      {},
+      new AbortController().signal,
+      undefined,
+      ctx,
+    );
 
     expect(result).toHaveProperty("content");
     expect(result.content[0].type).toBe("text");
@@ -147,7 +200,13 @@ describe("execução das ferramentas", () => {
 
     const tool = registeredTools.get("codegraph_files")!;
     const ctx = { cwd: "/tmp/proj" };
-    const result = await (tool.execute as Function)("id", {}, new AbortController().signal, undefined, ctx);
+    const result = await (tool.execute as Function)(
+      "id",
+      {},
+      new AbortController().signal,
+      undefined,
+      ctx,
+    );
 
     expect(result).toHaveProperty("content");
     expect(result.content[0].type).toBe("text");
@@ -179,7 +238,13 @@ describe("execução das ferramentas", () => {
 
     const tool = registeredTools.get("codegraph_init")!;
     const ctx = { cwd: "/tmp/proj" };
-    const result = await (tool.execute as Function)("id", {}, new AbortController().signal, undefined, ctx);
+    const result = await (tool.execute as Function)(
+      "id",
+      {},
+      new AbortController().signal,
+      undefined,
+      ctx,
+    );
 
     expect(result).toHaveProperty("content");
   });
@@ -209,7 +274,13 @@ describe("execução das ferramentas", () => {
 
     const tool = registeredTools.get("codegraph_sync")!;
     const ctx = { cwd: "/tmp/proj" };
-    const result = await (tool.execute as Function)("id", {}, new AbortController().signal, undefined, ctx);
+    const result = await (tool.execute as Function)(
+      "id",
+      {},
+      new AbortController().signal,
+      undefined,
+      ctx,
+    );
 
     expect(result).toHaveProperty("content");
   });
@@ -255,7 +326,13 @@ describe("erro de CLI", () => {
     const ctx = { cwd: "/tmp/proj" };
 
     await expect(
-      (tool.execute as Function)("id", {}, new AbortController().signal, undefined, ctx),
+      (tool.execute as Function)(
+        "id",
+        {},
+        new AbortController().signal,
+        undefined,
+        ctx,
+      ),
     ).rejects.toThrow();
   });
 });
@@ -332,13 +409,17 @@ describe("edge cases", () => {
     expect(result).toHaveProperty("content");
     expect(result.details.stdinMode).toBe(true);
     expect(mock.execCalls.at(-1)?.cmd).toBe("bash");
-    expect((mock.execCalls.at(-1)?.args[1] as string)).toContain("@colbymchenry/codegraph");
-    expect((mock.execCalls.at(-1)?.args[1] as string)).toContain("affected");
+    expect(mock.execCalls.at(-1)?.args[1] as string).toContain(
+      "@colbymchenry/codegraph",
+    );
+    expect(mock.execCalls.at(-1)?.args[1] as string).toContain("affected");
   });
 
   it("codegraph_files parseia JSON e formata saída", async () => {
     const mock = createMockPi();
-    mock.setExecResult(JSON.stringify({ files: ["src/a.ts", "src/b.ts"], directories: ["src"] }));
+    mock.setExecResult(
+      JSON.stringify({ files: ["src/a.ts", "src/b.ts"], directories: ["src"] }),
+    );
 
     const mod = await import("../index.js");
     mod.default(mock.pi);
@@ -367,7 +448,13 @@ describe("edge cases", () => {
     const ctx = { cwd: "/tmp/proj" };
 
     await expect(
-      (tool.execute as Function)("id", {}, new AbortController().signal, undefined, ctx),
+      (tool.execute as Function)(
+        "id",
+        {},
+        new AbortController().signal,
+        undefined,
+        ctx,
+      ),
     ).rejects.toThrow(/permission denied/);
   });
 

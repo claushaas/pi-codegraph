@@ -6,12 +6,16 @@
  * NÃO interativo por padrão — interação humana via slash command.
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { CodegraphInitParams, buildInitArgs, type CodegraphInitInput } from "../schemas.js";
-import { runCodegraph } from "../cli.js";
-import { formatToolOutput, TOOL_OUTPUT_MAX_BYTES_LABEL } from "../truncate.js";
-import { TIMEOUTS } from "../config.js";
 import { resolve } from "node:path";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { runCodegraph } from "../cli.js";
+import { TIMEOUTS } from "../config.js";
+import {
+  buildInitArgs,
+  type CodegraphInitInput,
+  CodegraphInitParams,
+} from "../schemas.js";
+import { formatToolOutput, TOOL_OUTPUT_MAX_BYTES_LABEL } from "../truncate.js";
 
 export function registerCodegraphInitTool(pi: ExtensionAPI): void {
   pi.registerTool({
@@ -25,7 +29,13 @@ export function registerCodegraphInitTool(pi: ExtensionAPI): void {
       "Do not set interactive: true — the LLM tool runs non-interactively by default. Use the /codegraph-init slash command for interactive setup.",
     ],
     parameters: CodegraphInitParams,
-    async execute(_toolCallId, params: CodegraphInitInput, signal, _onUpdate, ctx) {
+    async execute(
+      _toolCallId,
+      params: CodegraphInitInput,
+      signal,
+      _onUpdate,
+      ctx,
+    ) {
       const cwd = resolve(ctx.cwd, params.path ?? ".");
       const result = await runCodegraph(
         pi,
@@ -37,8 +47,14 @@ export function registerCodegraphInitTool(pi: ExtensionAPI): void {
       const { text, truncation } = formatToolOutput(result.stdout, "tail");
 
       return {
-        content: [{ type: "text", text: text || "CodeGraph initialized successfully." }],
-        details: { truncated: truncation.truncated, exitCode: result.code, indexed: params.index === true },
+        content: [
+          { type: "text", text: text || "CodeGraph initialized successfully." },
+        ],
+        details: {
+          truncated: truncation.truncated,
+          exitCode: result.code,
+          indexed: params.index === true,
+        },
       };
     },
   });

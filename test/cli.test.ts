@@ -1,7 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { runCodegraph, CodegraphCliError } from "../src/cli.js";
-import { getCodegraphBin, getCodegraphInvocation, TIMEOUTS } from "../src/config.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { CodegraphCliError, runCodegraph } from "../src/cli.js";
+import {
+  getCodegraphBin,
+  getCodegraphInvocation,
+  TIMEOUTS,
+} from "../src/config.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -9,7 +13,11 @@ import { getCodegraphBin, getCodegraphInvocation, TIMEOUTS } from "../src/config
 
 /** Cria um mock mínimo de ExtensionAPI com pi.exec controlável. */
 function createMockPi(
-  execImpl: (cmd: string, args: string[], opts?: { signal?: AbortSignal; timeout?: number }) => Promise<{ stdout: string; stderr: string; code: number }>,
+  execImpl: (
+    cmd: string,
+    args: string[],
+    opts?: { signal?: AbortSignal; timeout?: number },
+  ) => Promise<{ stdout: string; stderr: string; code: number }>,
 ): ExtensionAPI {
   return {
     exec: vi.fn(execImpl),
@@ -17,12 +25,23 @@ function createMockPi(
 }
 
 /** Mock que retorna sucesso. */
-function mockSuccess(stdout = "", stderr = ""): ReturnType<typeof createMockPi> {
-  return createMockPi(async (_cmd, _args, _opts) => ({ stdout, stderr, code: 0 }));
+function mockSuccess(
+  stdout = "",
+  stderr = "",
+): ReturnType<typeof createMockPi> {
+  return createMockPi(async (_cmd, _args, _opts) => ({
+    stdout,
+    stderr,
+    code: 0,
+  }));
 }
 
 /** Mock que retorna erro. */
-function mockError(code: number, stderr = "", stdout = ""): ReturnType<typeof createMockPi> {
+function mockError(
+  code: number,
+  stderr = "",
+  stdout = "",
+): ReturnType<typeof createMockPi> {
   return createMockPi(async (_cmd, _args, _opts) => ({ stdout, stderr, code }));
 }
 
@@ -52,7 +71,10 @@ describe("getCodegraphBin", () => {
   it("respeita PI_CODEGRAPH_BIN", () => {
     process.env.PI_CODEGRAPH_BIN = "/usr/local/bin/codegraph-custom";
     expect(getCodegraphBin()).toBe("/usr/local/bin/codegraph-custom");
-    expect(getCodegraphInvocation()).toEqual({ bin: "/usr/local/bin/codegraph-custom", prefixArgs: [] });
+    expect(getCodegraphInvocation()).toEqual({
+      bin: "/usr/local/bin/codegraph-custom",
+      prefixArgs: [],
+    });
   });
 });
 
@@ -65,7 +87,8 @@ describe("runCodegraph (sucesso)", () => {
     const pi = mockSuccess("ok");
     await runCodegraph(pi, ["status", "."]);
     expect(pi.exec).toHaveBeenCalledOnce();
-    const [bin, args, opts] = (pi.exec as ReturnType<typeof vi.fn>).mock.calls[0];
+    const [bin, args, opts] = (pi.exec as ReturnType<typeof vi.fn>).mock
+      .calls[0];
     expect(bin).toBe(process.execPath);
     expect(args[0]).toContain("@colbymchenry/codegraph");
     expect(args.slice(1)).toEqual(["status", "."]);
@@ -103,7 +126,9 @@ describe("runCodegraph (sucesso)", () => {
 describe("runCodegraph (erro)", () => {
   it("lança CodegraphCliError quando code !== 0", async () => {
     const pi = mockError(1, "fatal error");
-    await expect(runCodegraph(pi, ["status"])).rejects.toThrow(CodegraphCliError);
+    await expect(runCodegraph(pi, ["status"])).rejects.toThrow(
+      CodegraphCliError,
+    );
   });
 
   it("inclui código, stdout e stderr no erro", async () => {
@@ -153,7 +178,9 @@ describe("runCodegraph (parse JSON)", () => {
   it("parseia JSON quando parseJson é true e stdout é JSON válido", async () => {
     const data = { languages: ["ts"], nodes: 42 };
     const pi = mockSuccess(JSON.stringify(data));
-    const result = await runCodegraph(pi, ["query", "foo", "--json"], { parseJson: true });
+    const result = await runCodegraph(pi, ["query", "foo", "--json"], {
+      parseJson: true,
+    });
     expect(result.json).toEqual(data);
   });
 
@@ -171,7 +198,9 @@ describe("runCodegraph (parse JSON)", () => {
 
   it("não popula json quando stdout é JSON inválido (fallback silencioso)", async () => {
     const pi = mockSuccess("not json at all");
-    const result = await runCodegraph(pi, ["query", "foo"], { parseJson: true });
+    const result = await runCodegraph(pi, ["query", "foo"], {
+      parseJson: true,
+    });
     expect(result.json).toBeUndefined();
     // stdout permanece como texto
     expect(result.stdout).toBe("not json at all");
@@ -179,7 +208,9 @@ describe("runCodegraph (parse JSON)", () => {
 
   it("preserva stdout mesmo quando JSON falha no parse", async () => {
     const pi = mockSuccess("{ broken");
-    const result = await runCodegraph(pi, ["query", "x", "--json"], { parseJson: true });
+    const result = await runCodegraph(pi, ["query", "x", "--json"], {
+      parseJson: true,
+    });
     expect(result.json).toBeUndefined();
     expect(result.stdout).toBe("{ broken");
   });

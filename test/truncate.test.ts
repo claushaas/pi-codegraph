@@ -1,10 +1,13 @@
-import { describe, it, expect } from "vitest";
+import {
+  DEFAULT_MAX_BYTES,
+  DEFAULT_MAX_LINES,
+} from "@earendil-works/pi-coding-agent";
+import { describe, expect, it } from "vitest";
 import {
   formatToolOutput,
-  TOOL_OUTPUT_MAX_LINES,
   TOOL_OUTPUT_MAX_BYTES_LABEL,
+  TOOL_OUTPUT_MAX_LINES,
 } from "../src/truncate.js";
-import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES } from "@earendil-works/pi-coding-agent";
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -52,20 +55,28 @@ describe("formatToolOutput — sem truncamento", () => {
 
 describe("formatToolOutput — truncamento por linhas (head)", () => {
   it("trunca quando output excede DEFAULT_MAX_LINES", () => {
-    const lines = Array.from({ length: DEFAULT_MAX_LINES + 100 }, (_, i) => `linha ${i}`);
+    const lines = Array.from(
+      { length: DEFAULT_MAX_LINES + 100 },
+      (_, i) => `linha ${i}`,
+    );
     const output = lines.join("\n");
 
     const result = formatToolOutput(output, "head");
 
     expect(result.truncation.truncated).toBe(true);
-    expect(result.truncation.outputLines!).toBeLessThanOrEqual(DEFAULT_MAX_LINES);
+    expect(result.truncation.outputLines!).toBeLessThanOrEqual(
+      DEFAULT_MAX_LINES,
+    );
     expect(result.truncation.totalLines!).toBe(DEFAULT_MAX_LINES + 100);
     // A mensagem deve mencionar truncamento
     expect(result.text).toContain("[Saída truncada");
   });
 
   it("mantém o início do texto (head)", () => {
-    const lines = Array.from({ length: DEFAULT_MAX_LINES + 10 }, (_, i) => `linha ${i}`);
+    const lines = Array.from(
+      { length: DEFAULT_MAX_LINES + 10 },
+      (_, i) => `linha ${i}`,
+    );
     const output = lines.join("\n");
 
     const result = formatToolOutput(output, "head");
@@ -84,13 +95,15 @@ describe("formatToolOutput — truncamento por linhas (head)", () => {
 describe("formatToolOutput — truncamento por bytes (head)", () => {
   it("trunca quando output excede DEFAULT_MAX_BYTES", () => {
     // Gera ~60KB de texto (acima de 50KB)
-    const chunk = "a".repeat(1000) + "\n";
+    const chunk = `${"a".repeat(1000)}\n`;
     const output = chunk.repeat(65); // ~65KB
 
     const result = formatToolOutput(output, "head");
 
     expect(result.truncation.truncated).toBe(true);
-    expect(result.truncation.outputBytes!).toBeLessThanOrEqual(DEFAULT_MAX_BYTES);
+    expect(result.truncation.outputBytes!).toBeLessThanOrEqual(
+      DEFAULT_MAX_BYTES,
+    );
     expect(result.truncation.totalBytes!).toBeGreaterThan(DEFAULT_MAX_BYTES);
   });
 });
@@ -101,7 +114,10 @@ describe("formatToolOutput — truncamento por bytes (head)", () => {
 
 describe("formatToolOutput — modo tail", () => {
   it("mantém o final do texto", () => {
-    const lines = Array.from({ length: DEFAULT_MAX_LINES + 50 }, (_, i) => `linha ${i}`);
+    const lines = Array.from(
+      { length: DEFAULT_MAX_LINES + 50 },
+      (_, i) => `linha ${i}`,
+    );
     const output = lines.join("\n");
 
     const result = formatToolOutput(output, "tail");
@@ -127,17 +143,24 @@ describe("formatToolOutput — modo tail", () => {
 
 describe("formatToolOutput — metadados", () => {
   it("details inclui totalLines e outputLines quando truncado", () => {
-    const lines = Array.from({ length: DEFAULT_MAX_LINES + 500 }, (_, i) => `x${i}`);
+    const lines = Array.from(
+      { length: DEFAULT_MAX_LINES + 500 },
+      (_, i) => `x${i}`,
+    );
     const output = lines.join("\n");
 
     const result = formatToolOutput(output, "head");
 
     expect(result.truncation.truncated).toBe(true);
     expect(result.truncation.totalLines).toBe(DEFAULT_MAX_LINES + 500);
-    expect(result.truncation.outputLines).toBeLessThanOrEqual(DEFAULT_MAX_LINES);
+    expect(result.truncation.outputLines).toBeLessThanOrEqual(
+      DEFAULT_MAX_LINES,
+    );
     expect(typeof result.truncation.totalBytes).toBe("number");
     expect(typeof result.truncation.outputBytes).toBe("number");
-    expect(result.truncation.outputBytes! <= result.truncation.totalBytes!).toBe(true);
+    expect(
+      result.truncation.outputBytes! <= result.truncation.totalBytes!,
+    ).toBe(true);
   });
 
   it("details tem truncated: false quando não há truncamento", () => {
@@ -148,7 +171,10 @@ describe("formatToolOutput — metadados", () => {
   });
 
   it("mensagem de truncamento inclui contagem de linhas e bytes omitidos", () => {
-    const lines = Array.from({ length: DEFAULT_MAX_LINES + 10 }, (_, i) => `linha ${i}`);
+    const lines = Array.from(
+      { length: DEFAULT_MAX_LINES + 10 },
+      (_, i) => `linha ${i}`,
+    );
     const output = lines.join("\n");
 
     const result = formatToolOutput(output, "head");

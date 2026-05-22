@@ -1,21 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  CodegraphStatusParams,
-  CodegraphInitParams,
-  CodegraphIndexParams,
-  CodegraphSyncParams,
-  CodegraphSearchParams,
-  CodegraphFilesParams,
-  CodegraphContextParams,
-  CodegraphAffectedParams,
-  buildStatusArgs,
-  buildInitArgs,
-  buildIndexArgs,
-  buildSyncArgs,
-  buildSearchArgs,
-  buildFilesArgs,
-  buildContextArgs,
   buildAffectedArgs,
+  buildContextArgs,
+  buildFilesArgs,
+  buildIndexArgs,
+  buildInitArgs,
+  buildSearchArgs,
+  buildStatusArgs,
+  buildSyncArgs,
+  CodegraphAffectedParams,
+  CodegraphContextParams,
+  CodegraphFilesParams,
+  CodegraphIndexParams,
+  CodegraphInitParams,
+  CodegraphSearchParams,
+  CodegraphStatusParams,
+  CodegraphSyncParams,
 } from "../src/schemas.js";
 
 // ---------------------------------------------------------------------------
@@ -52,7 +52,10 @@ describe("buildStatusArgs", () => {
   });
 
   it("inclui path quando fornecido", () => {
-    expect(buildStatusArgs({ path: "/tmp/proj" })).toEqual(["status", "/tmp/proj"]);
+    expect(buildStatusArgs({ path: "/tmp/proj" })).toEqual([
+      "status",
+      "/tmp/proj",
+    ]);
   });
 
   it("omite path vazio", () => {
@@ -78,7 +81,11 @@ describe("buildInitArgs", () => {
   });
 
   it("inclui path", () => {
-    expect(buildInitArgs({ path: "./myproj", index: true })).toEqual(["init", "./myproj", "--index"]);
+    expect(buildInitArgs({ path: "./myproj", index: true })).toEqual([
+      "init",
+      "./myproj",
+      "--index",
+    ]);
   });
 });
 
@@ -92,7 +99,11 @@ describe("buildIndexArgs", () => {
   });
 
   it("adiciona --force e --quiet", () => {
-    expect(buildIndexArgs({ force: true, quiet: true })).toEqual(["index", "--force", "--quiet"]);
+    expect(buildIndexArgs({ force: true, quiet: true })).toEqual([
+      "index",
+      "--force",
+      "--quiet",
+    ]);
   });
 
   it("não adiciona flags quando false", () => {
@@ -110,7 +121,11 @@ describe("buildSyncArgs", () => {
   });
 
   it("adiciona --quiet e path", () => {
-    expect(buildSyncArgs({ quiet: true, path: "/app" })).toEqual(["sync", "/app", "--quiet"]);
+    expect(buildSyncArgs({ quiet: true, path: "/app" })).toEqual([
+      "sync",
+      "/app",
+      "--quiet",
+    ]);
   });
 });
 
@@ -120,24 +135,55 @@ describe("buildSyncArgs", () => {
 
 describe("buildSearchArgs", () => {
   it("monta comando básico com query e --json", () => {
-    expect(buildSearchArgs({ query: "myFunc" })).toEqual(["query", "myFunc", "--json"]);
+    expect(buildSearchArgs({ query: "myFunc" })).toEqual([
+      "query",
+      "myFunc",
+      "--json",
+    ]);
   });
 
   it("adiciona --kind e --limit", () => {
-    const args = buildSearchArgs({ query: "handle", kind: "function", limit: 10 });
-    expect(args).toEqual(["query", "handle", "--kind", "function", "--limit", "10", "--json"]);
+    const args = buildSearchArgs({
+      query: "handle",
+      kind: "function",
+      limit: 10,
+    });
+    expect(args).toEqual([
+      "query",
+      "handle",
+      "--kind",
+      "function",
+      "--limit",
+      "10",
+      "--json",
+    ]);
   });
 
   it("omite kind e limit quando undefined", () => {
-    expect(buildSearchArgs({ query: "foo" })).toEqual(["query", "foo", "--json"]);
+    expect(buildSearchArgs({ query: "foo" })).toEqual([
+      "query",
+      "foo",
+      "--json",
+    ]);
   });
 
   it("inclui path após --json", () => {
-    expect(buildSearchArgs({ query: "bar", path: "/src" })).toEqual(["query", "bar", "--json", "--path", "/src"]);
+    expect(buildSearchArgs({ query: "bar", path: "/src" })).toEqual([
+      "query",
+      "bar",
+      "--json",
+      "--path",
+      "/src",
+    ]);
   });
 
   it("sempre termina com --json (antes do path opcional)", () => {
-    const args = buildSearchArgs({ query: "x", kind: "class", limit: 5, path: "/p" });
+    const args = buildSearchArgs({
+      query: "x",
+      kind: "class",
+      limit: 5,
+      path: "/p",
+    });
     // --json deve vir antes de --path
     expect(args).toContain("--json");
     const jsonIdx = args.indexOf("--json");
@@ -156,16 +202,37 @@ describe("buildFilesArgs", () => {
   });
 
   it("adiciona --format, --filter, --max-depth", () => {
-    const args = buildFilesArgs({ format: "json", filter: "src/**", maxDepth: 3 });
-    expect(args).toEqual(["files", "--format", "json", "--filter", "src/**", "--max-depth", "3", "--json"]);
+    const args = buildFilesArgs({
+      format: "json",
+      filter: "src/**",
+      maxDepth: 3,
+    });
+    expect(args).toEqual([
+      "files",
+      "--format",
+      "json",
+      "--filter",
+      "src/**",
+      "--max-depth",
+      "3",
+      "--json",
+    ]);
   });
 
   it("inclui path como --path flag", () => {
-    expect(buildFilesArgs({ path: "./lib" })).toEqual(["files", "--path", "./lib", "--json"]);
+    expect(buildFilesArgs({ path: "./lib" })).toEqual([
+      "files",
+      "--path",
+      "./lib",
+      "--json",
+    ]);
   });
 
   it("omite flags undefined", () => {
-    expect(buildFilesArgs({ format: undefined, filter: undefined })).toEqual(["files", "--json"]);
+    expect(buildFilesArgs({ format: undefined, filter: undefined })).toEqual([
+      "files",
+      "--json",
+    ]);
   });
 });
 
@@ -175,16 +242,35 @@ describe("buildFilesArgs", () => {
 
 describe("buildContextArgs", () => {
   it("retorna ['context', task] sem flags", () => {
-    expect(buildContextArgs({ task: "fix login" })).toEqual(["context", "fix login"]);
+    expect(buildContextArgs({ task: "fix login" })).toEqual([
+      "context",
+      "fix login",
+    ]);
   });
 
   it("adiciona --format e --max-nodes", () => {
-    const args = buildContextArgs({ task: "explain auth", format: "markdown", maxNodes: 20 });
-    expect(args).toEqual(["context", "explain auth", "--format", "markdown", "--max-nodes", "20"]);
+    const args = buildContextArgs({
+      task: "explain auth",
+      format: "markdown",
+      maxNodes: 20,
+    });
+    expect(args).toEqual([
+      "context",
+      "explain auth",
+      "--format",
+      "markdown",
+      "--max-nodes",
+      "20",
+    ]);
   });
 
   it("inclui path como --path flag", () => {
-    expect(buildContextArgs({ task: "t", path: "/p" })).toEqual(["context", "t", "--path", "/p"]);
+    expect(buildContextArgs({ task: "t", path: "/p" })).toEqual([
+      "context",
+      "t",
+      "--path",
+      "/p",
+    ]);
   });
 });
 
@@ -203,7 +289,10 @@ describe("buildAffectedArgs", () => {
   });
 
   it("adiciona --stdin quando stdin é fornecido (sem files)", () => {
-    expect(buildAffectedArgs({ stdin: "a.ts\nb.ts" })).toEqual(["affected", "--stdin"]);
+    expect(buildAffectedArgs({ stdin: "a.ts\nb.ts" })).toEqual([
+      "affected",
+      "--stdin",
+    ]);
   });
 
   it("prefere files sobre stdin", () => {
@@ -213,7 +302,12 @@ describe("buildAffectedArgs", () => {
   });
 
   it("adiciona --depth, --filter, --json, --quiet", () => {
-    const args = buildAffectedArgs({ depth: 3, filter: "e2e/*", json: true, quiet: true });
+    const args = buildAffectedArgs({
+      depth: 3,
+      filter: "e2e/*",
+      json: true,
+      quiet: true,
+    });
     expect(args).toContain("--depth");
     expect(args).toContain("3");
     expect(args).toContain("--filter");

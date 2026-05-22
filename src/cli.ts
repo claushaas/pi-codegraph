@@ -80,7 +80,11 @@ export async function runCodegraph(
   // documentamos que a ferramenta deve resolver paths manualmente e o cwd
   // é controlado pelo Pi durante a execução da tool.
   // Por enquanto, passamos apenas signal e timeout.
-  const result = await pi.exec(invocation.bin, [...invocation.prefixArgs, ...args], { signal, timeout });
+  const result = await pi.exec(
+    invocation.bin,
+    [...invocation.prefixArgs, ...args],
+    { signal, timeout },
+  );
 
   const { stdout, stderr, code } = result;
 

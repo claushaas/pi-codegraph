@@ -57,10 +57,20 @@ export const TOOL_OUTPUT_MAX_BYTES_LABEL = formatSize(DEFAULT_MAX_BYTES);
  * @param mode    "head" (padrão) mantém o início; "tail" mantém o final.
  * @returns       Texto truncado + metadados.
  */
-export function formatToolOutput(output: string, mode: "head" | "tail" = "head"): FormatToolOutputResult {
-  const truncation = mode === "tail"
-    ? truncateTail(output, { maxLines: DEFAULT_MAX_LINES, maxBytes: DEFAULT_MAX_BYTES })
-    : truncateHead(output, { maxLines: DEFAULT_MAX_LINES, maxBytes: DEFAULT_MAX_BYTES });
+export function formatToolOutput(
+  output: string,
+  mode: "head" | "tail" = "head",
+): FormatToolOutputResult {
+  const truncation =
+    mode === "tail"
+      ? truncateTail(output, {
+          maxLines: DEFAULT_MAX_LINES,
+          maxBytes: DEFAULT_MAX_BYTES,
+        })
+      : truncateHead(output, {
+          maxLines: DEFAULT_MAX_LINES,
+          maxBytes: DEFAULT_MAX_BYTES,
+        });
 
   const details: TruncationDetails = { truncated: truncation.truncated };
 

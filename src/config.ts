@@ -24,7 +24,9 @@ function resolveBundledCodegraphCli(): string | undefined {
 
 /** Caminho para a CLI codegraph. Para executar via pi.exec(), prefira getCodegraphInvocation(). */
 export function getCodegraphBin(): string {
-  return process.env.PI_CODEGRAPH_BIN || resolveBundledCodegraphCli() || "codegraph";
+  return (
+    process.env.PI_CODEGRAPH_BIN || resolveBundledCodegraphCli() || "codegraph"
+  );
 }
 
 /** Invocação portátil: executa a CLI JS empacotada via o Node atual quando ela estiver disponível. */

@@ -5,12 +5,16 @@
  * Executa indexação completa do projeto. Operação de longa duração.
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { CodegraphIndexParams, buildIndexArgs, type CodegraphIndexInput } from "../schemas.js";
-import { runCodegraph } from "../cli.js";
-import { formatToolOutput, TOOL_OUTPUT_MAX_BYTES_LABEL } from "../truncate.js";
-import { TIMEOUTS } from "../config.js";
 import { resolve } from "node:path";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { runCodegraph } from "../cli.js";
+import { TIMEOUTS } from "../config.js";
+import {
+  buildIndexArgs,
+  type CodegraphIndexInput,
+  CodegraphIndexParams,
+} from "../schemas.js";
+import { formatToolOutput, TOOL_OUTPUT_MAX_BYTES_LABEL } from "../truncate.js";
 
 export function registerCodegraphIndexTool(pi: ExtensionAPI): void {
   pi.registerTool({
@@ -24,7 +28,13 @@ export function registerCodegraphIndexTool(pi: ExtensionAPI): void {
       "For incremental updates after code changes, prefer codegraph_sync.",
     ],
     parameters: CodegraphIndexParams,
-    async execute(_toolCallId, params: CodegraphIndexInput, signal, _onUpdate, ctx) {
+    async execute(
+      _toolCallId,
+      params: CodegraphIndexInput,
+      signal,
+      _onUpdate,
+      ctx,
+    ) {
       const cwd = resolve(ctx.cwd, params.path ?? ".");
       const result = await runCodegraph(
         pi,
@@ -36,8 +46,14 @@ export function registerCodegraphIndexTool(pi: ExtensionAPI): void {
       const { text, truncation } = formatToolOutput(result.stdout, "tail");
 
       return {
-        content: [{ type: "text", text: text || "CodeGraph indexing completed." }],
-        details: { truncated: truncation.truncated, exitCode: result.code, force: params.force === true },
+        content: [
+          { type: "text", text: text || "CodeGraph indexing completed." },
+        ],
+        details: {
+          truncated: truncation.truncated,
+          exitCode: result.code,
+          force: params.force === true,
+        },
       };
     },
   });

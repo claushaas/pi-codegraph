@@ -1,8 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
+import { describe, expect, it, vi } from "vitest";
 
 interface MockUi {
   notify: ReturnType<typeof vi.fn>;
@@ -57,7 +60,13 @@ async function waitFor(condition: () => boolean): Promise<void> {
   throw new Error("condition was not met");
 }
 
-function createMockPi(execImpl = async () => ({ stdout: "CodeGraph sync completed.", stderr: "", code: 0 })) {
+function createMockPi(
+  execImpl = async () => ({
+    stdout: "CodeGraph sync completed.",
+    stderr: "",
+    code: 0,
+  }),
+) {
   const eventHandlers = new Map<string, Function[]>();
   const pi = {
     exec: vi.fn(execImpl),
@@ -125,26 +134,59 @@ describe("auto sync", () => {
 
   it("agenda outro sync quando edit/write ocorre durante sync em andamento", async () => {
     await withCodegraphDir(async (cwd) => {
-      const firstSync = createDeferred<{ stdout: string; stderr: string; code: number }>();
-      const secondSync = createDeferred<{ stdout: string; stderr: string; code: number }>();
+      const firstSync = createDeferred<{
+        stdout: string;
+        stderr: string;
+        code: number;
+      }>();
+      const secondSync = createDeferred<{
+        stdout: string;
+        stderr: string;
+        code: number;
+      }>();
       const { pi, eventHandlers } = createMockPi(
-        vi.fn().mockImplementationOnce(() => firstSync.promise).mockImplementationOnce(() => secondSync.promise),
+        vi
+          .fn()
+          .mockImplementationOnce(() => firstSync.promise)
+          .mockImplementationOnce(() => secondSync.promise),
       );
       const mod = await import("../index.js");
       mod.default(pi);
 
       const handler = (eventHandlers.get("tool_result") ?? [])[0];
       const ctx = createMockCtx(cwd);
-      const firstRun = handler?.({ toolName: "edit", isError: false }, ctx) as Promise<void>;
-      await waitFor(() => (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length === 1);
+      const firstRun = handler?.(
+        { toolName: "edit", isError: false },
+        ctx,
+      ) as Promise<void>;
+      await waitFor(
+        () =>
+          (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length ===
+          1,
+      );
 
-      const secondRun = handler?.({ toolName: "write", isError: false }, ctx) as Promise<void>;
+      const secondRun = handler?.(
+        { toolName: "write", isError: false },
+        ctx,
+      ) as Promise<void>;
       await flushAsync();
 
-      firstSync.resolve({ stdout: "CodeGraph sync completed.", stderr: "", code: 0 });
-      await waitFor(() => (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length === 2);
+      firstSync.resolve({
+        stdout: "CodeGraph sync completed.",
+        stderr: "",
+        code: 0,
+      });
+      await waitFor(
+        () =>
+          (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length ===
+          2,
+      );
 
-      secondSync.resolve({ stdout: "CodeGraph sync completed.", stderr: "", code: 0 });
+      secondSync.resolve({
+        stdout: "CodeGraph sync completed.",
+        stderr: "",
+        code: 0,
+      });
       await Promise.all([firstRun, secondRun]);
       expect(pi.exec).toHaveBeenCalledTimes(2);
     });
@@ -152,27 +194,58 @@ describe("auto sync", () => {
 
   it("agenda outro sync quando edit/write ocorre durante sync de início de turno", async () => {
     await withCodegraphDir(async (cwd) => {
-      const firstSync = createDeferred<{ stdout: string; stderr: string; code: number }>();
-      const secondSync = createDeferred<{ stdout: string; stderr: string; code: number }>();
+      const firstSync = createDeferred<{
+        stdout: string;
+        stderr: string;
+        code: number;
+      }>();
+      const secondSync = createDeferred<{
+        stdout: string;
+        stderr: string;
+        code: number;
+      }>();
       const { pi, eventHandlers } = createMockPi(
-        vi.fn().mockImplementationOnce(() => firstSync.promise).mockImplementationOnce(() => secondSync.promise),
+        vi
+          .fn()
+          .mockImplementationOnce(() => firstSync.promise)
+          .mockImplementationOnce(() => secondSync.promise),
       );
       const mod = await import("../index.js");
       mod.default(pi);
 
-      const beforeAgentStart = (eventHandlers.get("before_agent_start") ?? [])[0];
+      const beforeAgentStart = (eventHandlers.get("before_agent_start") ??
+        [])[0];
       const toolResult = (eventHandlers.get("tool_result") ?? [])[0];
       const ctx = createMockCtx(cwd);
       const turnStartRun = beforeAgentStart?.({}, ctx) as Promise<void>;
-      await waitFor(() => (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length === 1);
+      await waitFor(
+        () =>
+          (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length ===
+          1,
+      );
 
-      const fileMutationRun = toolResult?.({ toolName: "edit", isError: false }, ctx) as Promise<void>;
+      const fileMutationRun = toolResult?.(
+        { toolName: "edit", isError: false },
+        ctx,
+      ) as Promise<void>;
       await flushAsync();
 
-      firstSync.resolve({ stdout: "CodeGraph sync completed.", stderr: "", code: 0 });
-      await waitFor(() => (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length === 2);
+      firstSync.resolve({
+        stdout: "CodeGraph sync completed.",
+        stderr: "",
+        code: 0,
+      });
+      await waitFor(
+        () =>
+          (pi.exec as unknown as ReturnType<typeof vi.fn>).mock.calls.length ===
+          2,
+      );
 
-      secondSync.resolve({ stdout: "CodeGraph sync completed.", stderr: "", code: 0 });
+      secondSync.resolve({
+        stdout: "CodeGraph sync completed.",
+        stderr: "",
+        code: 0,
+      });
       await Promise.all([turnStartRun, fileMutationRun]);
       expect(pi.exec).toHaveBeenCalledTimes(2);
     });

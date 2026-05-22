@@ -9,8 +9,8 @@
  * - Ordem: comando, subcomando, argumentos posicionais, flags.
  */
 
-import { Type } from "typebox";
 import { StringEnum } from "@earendil-works/pi-ai";
+import { Type } from "typebox";
 
 // ---------------------------------------------------------------------------
 // Schemas TypeBox — parâmetros validados pelo Pi antes do execute()
@@ -23,47 +23,102 @@ const FormatEnum = StringEnum(["markdown", "json", "text"] as const);
 
 export const CodegraphStatusParams = Type.Object({
   /** Caminho do projeto. Padrão: ctx.cwd. */
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
 });
 
 // ---------------------------------------------------------------------------
 // Tipos de entrada (usados pelos builders; refletem os schemas acima)
 // ---------------------------------------------------------------------------
 
-export interface CodegraphStatusInput { path?: string }
-export interface CodegraphInitInput { path?: string; index?: boolean; interactive?: boolean }
-export interface CodegraphIndexInput { path?: string; force?: boolean; quiet?: boolean }
-export interface CodegraphSyncInput { path?: string; quiet?: boolean }
-export interface CodegraphSearchInput { query: string; kind?: string; limit?: number; path?: string }
-export interface CodegraphFilesInput { path?: string; format?: string; filter?: string; pattern?: string; maxDepth?: number }
-export interface CodegraphContextInput { task: string; path?: string; format?: string; maxNodes?: number }
-export interface CodegraphAffectedInput { path?: string; files?: string[]; stdin?: string; depth?: number; filter?: string; json?: boolean; quiet?: boolean }
+export interface CodegraphStatusInput {
+  path?: string;
+}
+export interface CodegraphInitInput {
+  path?: string;
+  index?: boolean;
+  interactive?: boolean;
+}
+export interface CodegraphIndexInput {
+  path?: string;
+  force?: boolean;
+  quiet?: boolean;
+}
+export interface CodegraphSyncInput {
+  path?: string;
+  quiet?: boolean;
+}
+export interface CodegraphSearchInput {
+  query: string;
+  kind?: string;
+  limit?: number;
+  path?: string;
+}
+export interface CodegraphFilesInput {
+  path?: string;
+  format?: string;
+  filter?: string;
+  pattern?: string;
+  maxDepth?: number;
+}
+export interface CodegraphContextInput {
+  task: string;
+  path?: string;
+  format?: string;
+  maxNodes?: number;
+}
+export interface CodegraphAffectedInput {
+  path?: string;
+  files?: string[];
+  stdin?: string;
+  depth?: number;
+  filter?: string;
+  json?: boolean;
+  quiet?: boolean;
+}
 
 // --- Init ---
 
 export const CodegraphInitParams = Type.Object({
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
   /** Also index after init. */
-  index: Type.Optional(Type.Boolean({ description: "Also index after initialization" })),
+  index: Type.Optional(
+    Type.Boolean({ description: "Also index after initialization" }),
+  ),
   /** Run interactive mode. Should be false for LLM tools by default. */
-  interactive: Type.Optional(Type.Boolean({ description: "Run interactive installer (default: false)" })),
+  interactive: Type.Optional(
+    Type.Boolean({ description: "Run interactive installer (default: false)" }),
+  ),
 });
 
 // --- Index ---
 
 export const CodegraphIndexParams = Type.Object({
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
   /** Force re-index even if up to date. */
-  force: Type.Optional(Type.Boolean({ description: "Force re-index even if up to date" })),
+  force: Type.Optional(
+    Type.Boolean({ description: "Force re-index even if up to date" }),
+  ),
   /** Suppress progress output. */
-  quiet: Type.Optional(Type.Boolean({ description: "Suppress progress output" })),
+  quiet: Type.Optional(
+    Type.Boolean({ description: "Suppress progress output" }),
+  ),
 });
 
 // --- Sync ---
 
 export const CodegraphSyncParams = Type.Object({
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
-  quiet: Type.Optional(Type.Boolean({ description: "Suppress progress output" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
+  quiet: Type.Optional(
+    Type.Boolean({ description: "Suppress progress output" }),
+  ),
 });
 
 // --- Search ---
@@ -72,24 +127,48 @@ export const CodegraphSearchParams = Type.Object({
   /** Texto de busca (nome de símbolo, função, classe, etc.). */
   query: Type.String({ description: "Symbol name or text to search for" }),
   /** Filtrar por tipo de nó (ex.: function, class, method). */
-  kind: Type.Optional(Type.String({ description: "Filter by node kind (e.g., function, class, method)" })),
+  kind: Type.Optional(
+    Type.String({
+      description: "Filter by node kind (e.g., function, class, method)",
+    }),
+  ),
   /** Máximo de resultados. */
-  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 100, description: "Maximum results (1-100)" })),
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  limit: Type.Optional(
+    Type.Number({
+      minimum: 1,
+      maximum: 100,
+      description: "Maximum results (1-100)",
+    }),
+  ),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
 });
 
 // --- Files ---
 
 export const CodegraphFilesParams = Type.Object({
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
   /** Output format. */
   format: Type.Optional(FormatEnum),
   /** Filter to files under this directory. */
-  filter: Type.Optional(Type.String({ description: "Filter to files under this directory" })),
+  filter: Type.Optional(
+    Type.String({ description: "Filter to files under this directory" }),
+  ),
   /** Glob pattern to match files. */
-  pattern: Type.Optional(Type.String({ description: "Glob pattern to match files (e.g., '*.ts')" })),
+  pattern: Type.Optional(
+    Type.String({ description: "Glob pattern to match files (e.g., '*.ts')" }),
+  ),
   /** Maximum directory depth. */
-  maxDepth: Type.Optional(Type.Number({ minimum: 1, maximum: 50, description: "Maximum directory depth" })),
+  maxDepth: Type.Optional(
+    Type.Number({
+      minimum: 1,
+      maximum: 50,
+      description: "Maximum directory depth",
+    }),
+  ),
 });
 
 // --- Context ---
@@ -97,25 +176,49 @@ export const CodegraphFilesParams = Type.Object({
 export const CodegraphContextParams = Type.Object({
   /** Descrição da tarefa para a qual o contexto será construído. */
   task: Type.String({ description: "Task description for context building" }),
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
   /** Output format. */
   format: Type.Optional(FormatEnum),
   /** Máximo de nós incluídos no contexto. */
-  maxNodes: Type.Optional(Type.Number({ minimum: 1, maximum: 100, description: "Maximum nodes in context (1-100)" })),
+  maxNodes: Type.Optional(
+    Type.Number({
+      minimum: 1,
+      maximum: 100,
+      description: "Maximum nodes in context (1-100)",
+    }),
+  ),
 });
 
 // --- Affected ---
 
 export const CodegraphAffectedParams = Type.Object({
-  path: Type.Optional(Type.String({ description: "Project path (default: current directory)" })),
+  path: Type.Optional(
+    Type.String({ description: "Project path (default: current directory)" }),
+  ),
   /** Lista de arquivos alterados. */
-  files: Type.Optional(Type.Array(Type.String(), { description: "List of changed files" })),
+  files: Type.Optional(
+    Type.Array(Type.String(), { description: "List of changed files" }),
+  ),
   /** String para stdin (alternativa a files, para pipe). */
-  stdin: Type.Optional(Type.String({ description: "File list as newline-separated string for stdin" })),
+  stdin: Type.Optional(
+    Type.String({
+      description: "File list as newline-separated string for stdin",
+    }),
+  ),
   /** Profundidade máxima de dependências. */
-  depth: Type.Optional(Type.Number({ minimum: 1, maximum: 20, description: "Max dependency traversal depth (1-20)" })),
+  depth: Type.Optional(
+    Type.Number({
+      minimum: 1,
+      maximum: 20,
+      description: "Max dependency traversal depth (1-20)",
+    }),
+  ),
   /** Glob para identificar arquivos de teste. */
-  filter: Type.Optional(Type.String({ description: "Glob to identify test files" })),
+  filter: Type.Optional(
+    Type.String({ description: "Glob to identify test files" }),
+  ),
   /** Saída como JSON. */
   json: Type.Optional(Type.Boolean({ description: "Output as JSON" })),
   /** Apenas paths na saída. */
@@ -127,14 +230,22 @@ export const CodegraphAffectedParams = Type.Object({
 // ---------------------------------------------------------------------------
 
 /** Adiciona um valor opcional como "--flag value". */
-function flag(args: string[], name: string, value: string | number | undefined): void {
+function flag(
+  args: string[],
+  name: string,
+  value: string | number | undefined,
+): void {
   if (value !== undefined && value !== null) {
     args.push(name, String(value));
   }
 }
 
 /** Adiciona uma flag booleana como "--flag" se o valor for true. */
-function boolFlag(args: string[], name: string, value: boolean | undefined): void {
+function boolFlag(
+  args: string[],
+  name: string,
+  value: boolean | undefined,
+): void {
   if (value === true) args.push(name);
 }
 

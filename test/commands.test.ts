@@ -1,5 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionCommandContext,
+} from "@earendil-works/pi-coding-agent";
+import { describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -11,7 +14,9 @@ interface MockUi {
   setStatus: ReturnType<typeof vi.fn>;
 }
 
-function createMockCtx(overrides: Partial<{ hasUI: boolean; cwd: string; ui: MockUi }> = {}): ExtensionCommandContext {
+function createMockCtx(
+  overrides: Partial<{ hasUI: boolean; cwd: string; ui: MockUi }> = {},
+): ExtensionCommandContext {
   const ui: MockUi = overrides.ui ?? {
     notify: vi.fn(),
     confirm: vi.fn().mockResolvedValue(true),
@@ -44,25 +49,48 @@ function createMockCtx(overrides: Partial<{ hasUI: boolean; cwd: string; ui: Moc
 
 interface MockPi {
   pi: ExtensionAPI;
-  execCalls: Array<{ cmd: string; args: string[]; opts?: Record<string, unknown> }>;
+  execCalls: Array<{
+    cmd: string;
+    args: string[];
+    opts?: Record<string, unknown>;
+  }>;
   registeredCommands: Map<string, { description: string; handler: Function }>;
 }
 
 function createMockPi(): MockPi {
-  const execCalls: Array<{ cmd: string; args: string[]; opts?: Record<string, unknown> }> = [];
-  const registeredCommands = new Map<string, { description: string; handler: Function }>();
+  const execCalls: Array<{
+    cmd: string;
+    args: string[];
+    opts?: Record<string, unknown>;
+  }> = [];
+  const registeredCommands = new Map<
+    string,
+    { description: string; handler: Function }
+  >();
   const eventHandlers = new Map<string, Function[]>();
 
   const pi = {
-    exec: vi.fn(async (_cmd: string, _args: string[], _opts?: Record<string, unknown>) => {
-      execCalls.push({ cmd: _cmd, args: _args, opts: _opts });
-      return { stdout: "CodeGraph v0.7.10\n1 language, 42 nodes, 84 edges", stderr: "", code: 0 };
-    }),
+    exec: vi.fn(
+      async (
+        _cmd: string,
+        _args: string[],
+        _opts?: Record<string, unknown>,
+      ) => {
+        execCalls.push({ cmd: _cmd, args: _args, opts: _opts });
+        return {
+          stdout: "CodeGraph v0.7.10\n1 language, 42 nodes, 84 edges",
+          stderr: "",
+          code: 0,
+        };
+      },
+    ),
     sendMessage: vi.fn(),
     registerTool: vi.fn(),
-    registerCommand: vi.fn((name: string, def: { description: string; handler: Function }) => {
-      registeredCommands.set(name, def);
-    }),
+    registerCommand: vi.fn(
+      (name: string, def: { description: string; handler: Function }) => {
+        registeredCommands.set(name, def);
+      },
+    ),
     on: vi.fn((event: string, handler: Function) => {
       if (!eventHandlers.has(event)) eventHandlers.set(event, []);
       eventHandlers.get(event)!.push(handler);
@@ -93,7 +121,7 @@ describe("registro de comandos slash", () => {
     const mod = await import("../index.js");
     mod.default(pi);
 
-    for (const [name, def] of registeredCommands) {
+    for (const def of registeredCommands.values()) {
       expect(typeof def.description).toBe("string");
       expect(typeof def.handler).toBe("function");
     }
@@ -145,12 +173,14 @@ describe("/codegraph-status", () => {
     const cmd = registeredCommands.get("codegraph-status")!;
     await cmd.handler("", ctx);
 
-    expect(pi.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
-      customType: "codegraph-status",
-      content: expect.stringContaining("CodeGraph v0.7.10"),
-      display: true,
-      details: expect.objectContaining({ cwd: "/my/project", level: "info" }),
-    }));
+    expect(pi.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customType: "codegraph-status",
+        content: expect.stringContaining("CodeGraph v0.7.10"),
+        display: true,
+        details: expect.objectContaining({ cwd: "/my/project", level: "info" }),
+      }),
+    );
   });
 
   it("notifica warning quando CodeGraph não inicializado", async () => {
@@ -171,14 +201,18 @@ describe("/codegraph-status", () => {
     await cmd.handler("", ctx);
 
     const calls = (ui.notify as ReturnType<typeof vi.fn>).mock.calls;
-    const warningCall = calls.find((c: unknown[]) => (c[0] as string).includes("not initialized"));
+    const warningCall = calls.find((c: unknown[]) =>
+      (c[0] as string).includes("not initialized"),
+    );
     expect(warningCall).toBeDefined();
-    expect(pi.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
-      customType: "codegraph-status",
-      content: expect.stringContaining("not initialized"),
-      display: true,
-      details: expect.objectContaining({ level: "warning" }),
-    }));
+    expect(pi.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customType: "codegraph-status",
+        content: expect.stringContaining("not initialized"),
+        display: true,
+        details: expect.objectContaining({ level: "warning" }),
+      }),
+    );
   });
 });
 
@@ -192,7 +226,11 @@ describe("/codegraph-init", () => {
     const mod = await import("../index.js");
     mod.default(pi);
 
-    const ui = { notify: vi.fn(), confirm: vi.fn().mockResolvedValue(true), setStatus: vi.fn() };
+    const ui = {
+      notify: vi.fn(),
+      confirm: vi.fn().mockResolvedValue(true),
+      setStatus: vi.fn(),
+    };
     const ctx = createMockCtx({ ui });
     const cmd = registeredCommands.get("codegraph-init")!;
     await cmd.handler("", ctx);
@@ -205,7 +243,11 @@ describe("/codegraph-init", () => {
     const mod = await import("../index.js");
     mod.default(pi);
 
-    const ui = { notify: vi.fn(), confirm: vi.fn().mockResolvedValue(false), setStatus: vi.fn() };
+    const ui = {
+      notify: vi.fn(),
+      confirm: vi.fn().mockResolvedValue(false),
+      setStatus: vi.fn(),
+    };
     const ctx = createMockCtx({ ui });
     const cmd = registeredCommands.get("codegraph-init")!;
     await cmd.handler("", ctx);
@@ -237,7 +279,11 @@ describe("/codegraph-index", () => {
     await mkdir(join(tmp, ".codegraph"));
 
     try {
-      const ui = { notify: vi.fn(), confirm: vi.fn().mockResolvedValue(true), setStatus: vi.fn() };
+      const ui = {
+        notify: vi.fn(),
+        confirm: vi.fn().mockResolvedValue(true),
+        setStatus: vi.fn(),
+      };
       const ctx = createMockCtx({ ui, cwd: tmp });
       const cmd = registeredCommands.get("codegraph-index")!;
       await cmd.handler("", ctx);
@@ -310,12 +356,14 @@ describe("/codegraph-sync", () => {
     const cmd = registeredCommands.get("codegraph-sync")!;
     await cmd.handler("", ctx);
 
-    expect(pi.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
-      customType: "codegraph-sync",
-      content: expect.stringContaining("not initialized"),
-      display: true,
-      details: expect.objectContaining({ command: "sync", level: "warning" }),
-    }));
+    expect(pi.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customType: "codegraph-sync",
+        content: expect.stringContaining("not initialized"),
+        display: true,
+        details: expect.objectContaining({ command: "sync", level: "warning" }),
+      }),
+    );
   });
 });
 

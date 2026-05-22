@@ -20,20 +20,24 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
+    "biome": "biome check .",
+    "biome:write": "biome check --write .",
+    "biome:ci": "biome ci .",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "echo 'pi loads TypeScript extensions via jiti'",
     "pack:dry": "npm pack --dry-run"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
   "dependencies": {
     "@colbymchenry/codegraph": "^0.8.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.15",
     "typescript": "^5.0.0",
     "vitest": "^3.0.0"
   }
