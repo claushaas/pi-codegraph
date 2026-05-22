@@ -369,6 +369,40 @@ describe("edge cases", () => {
     expect(result.details.raw).toEqual(json);
   });
 
+  it("codegraph_search resume o formato node retornado pela CLI atual", async () => {
+    const mock = createMockPi();
+    const json = [
+      {
+        node: {
+          kind: "function",
+          name: "renderCoreResult",
+          qualifiedName: "renderCoreResult",
+          filePath: "src/core/render.ts",
+          startLine: 27,
+        },
+        score: 98.4,
+      },
+    ];
+    mock.setExecResult(JSON.stringify(json));
+
+    const mod = await import("../index.js");
+    mod.default(mock.pi);
+
+    const tool = mock.registeredTools.get("codegraph_search")!;
+    const ctx = { cwd: "/tmp/proj" };
+    const result = await (tool.execute as Function)(
+      "id",
+      { query: "renderCoreResult" },
+      new AbortController().signal,
+      undefined,
+      ctx,
+    );
+
+    expect(result.content[0].text).toContain("renderCoreResult [function]");
+    expect(result.content[0].text).toContain("src/core/render.ts:27");
+    expect(result.content[0].text).not.toContain("(sem nome)");
+  });
+
   it("codegraph_search retorna mensagem quando array vazio", async () => {
     const mock = createMockPi();
     mock.setExecResult("[]");

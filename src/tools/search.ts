@@ -75,11 +75,14 @@ function summarizeSearchResults(json: unknown, query: string): string {
 
   const lines = [`Encontrados ${results.length} símbolos para "${query}":`];
   for (const r of results.slice(0, 50)) {
-    const name = r.name ?? r.symbol ?? "(sem nome)";
-    const kind = r.kind ? ` [${r.kind}]` : "";
-    const file = r.file ?? r.path ?? "";
-    const line = r.line ? `:${r.line}` : "";
-    lines.push(`  ${name}${kind} — ${file}${line}`);
+    const node = isRecord(r.node) ? r.node : r;
+    const name =
+      node.name ?? node.qualifiedName ?? r.name ?? r.symbol ?? "(sem nome)";
+    const kind = node.kind ? ` [${node.kind}]` : "";
+    const file = node.filePath ?? r.file ?? r.path ?? "";
+    const line = node.startLine ?? r.line;
+    const location = `${file}${line ? `:${line}` : ""}`;
+    lines.push(`  ${name}${kind} — ${location}`);
   }
 
   if (results.length > 50) {
@@ -87,4 +90,8 @@ function summarizeSearchResults(json: unknown, query: string): string {
   }
 
   return lines.join("\n");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
