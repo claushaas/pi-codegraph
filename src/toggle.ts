@@ -11,6 +11,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { hasCodegraph } from "./guidance.js";
 
 // ---------------------------------------------------------------------------
 // Nomes de ferramentas
@@ -49,6 +50,7 @@ interface ToggleContext {
 }
 
 interface RestoreContext {
+  cwd: string;
   sessionManager?: {
     getBranch?: () => Array<{
       type: string;
@@ -130,12 +132,23 @@ export function toggle(pi: ExtensionAPI, ctx: ToggleContext): void {
 
 /**
  * Restaura estado salvo na sessão (último entry do tipo codegraph-toggle no branch).
+ * Se .codegraph/ não existir, força disabled independente do estado persistido.
  * Chamado em session_start.
  */
-export function restoreFromSession(
+export async function restoreFromSession(
   pi: ExtensionAPI,
   ctx: RestoreContext,
-): void {
+): Promise<void> {
+  const codegraphReady = await hasCodegraph(ctx.cwd);
+
+  // Se .codegraph/ não existe, sempre desativado
+  if (!codegraphReady) {
+    enabled = false;
+    deactivateTools(pi);
+    return;
+  }
+
+  // .codegraph/ existe: honra estado persistido
   const branch = ctx.sessionManager?.getBranch?.() ?? [];
   for (let i = branch.length - 1; i >= 0; i--) {
     const entry = branch[i];

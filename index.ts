@@ -54,7 +54,7 @@ export default function piCodegraph(pi: ExtensionAPI): void {
 
   // Restaura estado do toggle no início da sessão
   pi.on("session_start", async (_event, ctx) => {
-    restoreFromSession(pi, ctx);
+    await restoreFromSession(pi, { ...ctx, cwd: ctx.cwd });
   });
 
   // Fase 6: sincronização automática e orientação contextual do agente

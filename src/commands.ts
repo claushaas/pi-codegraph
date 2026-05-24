@@ -14,7 +14,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 import { hasCodegraph } from "./guidance.js";
-import { isEnabled, toggle } from "./toggle.js";
+import { enable, isEnabled, toggle } from "./toggle.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -170,6 +170,9 @@ export function registerCodegraphInitCommand(pi: ExtensionAPI): void {
         await execCodegraph(pi, ["init", ctx.cwd], TIMEOUTS.indexing);
         ctx.ui.setStatus?.("codegraph", "CodeGraph: initialized ✓");
         ctx.ui.notify("CodeGraph initialized successfully.", "info");
+
+        // Reativar extensão (caso estivesse desativada por falta de .codegraph/)
+        enable(pi, ctx);
 
         // Oferecer indexação
         const doIndex = await ctx.ui.confirm(
