@@ -92,6 +92,7 @@ No Pi, o agente receberá orientação automática para usar as ferramentas `cod
 | `/codegraph-init` | Inicializa CodeGraph (com confirmação) |
 | `/codegraph-index` | Indexa o projeto (com confirmação) |
 | `/codegraph-sync` | Atualiza incrementalmente o índice CodeGraph |
+| `/codegraph-toggle` | Ativa/desativa a extensão pi-codegraph |
 
 ## Uso pelo agente
 
@@ -106,6 +107,15 @@ A extensão mantém o DB do CodeGraph atualizado de três formas:
 - Depois de ferramentas que alteram arquivos (`edit` e `write`) concluírem com sucesso, a extensão roda `codegraph sync --quiet` novamente.
 
 Para rebuild completo, use `/codegraph-index` ou `codegraph index .`.
+
+## Desativar/ativar a extensão
+
+O comando `/codegraph-toggle` alterna a extensão entre ativo e desativado durante a sessão:
+
+- **Desativado:** as 8 ferramentas `codegraph_*` são removidas das ferramentas ativas do agente, a orientação no system prompt para de ser injetada, e o auto-sync é pausado. O footer mostra "CodeGraph: disabled".
+- **Ativado:** tudo é restaurado. O footer volta a "CodeGraph: ready".
+
+O estado persiste na sessão (via `appendEntry` no branch atual) e é restaurado ao recarregar ou navegar na árvore de sessão.
 
 ## Troubleshooting
 
@@ -196,6 +206,8 @@ No Pi:
 - [ ] `/codegraph-status` funciona em ambos os cenários
 - [ ] `/codegraph-init` confirma antes de executar
 - [ ] `/codegraph-index` confirma e indexa
+- [ ] `/codegraph-sync` sincroniza incrementalmente
+- [ ] `/codegraph-toggle` alterna estado, remove/restaura ferramentas e auto-sync
 - [ ] `codegraph_search` localiza símbolos
 - [ ] `codegraph_context` retorna contexto relevante
 - [ ] `codegraph_files` lista estrutura indexada

@@ -238,6 +238,13 @@ Encontra testes/arquivos afetados por mudanças.
   - Pode confirmar antes de executar `codegraph init`.
 - `/codegraph-index`
   - Executa indexação com confirmação, pois pode demorar.
+- `/codegraph-sync`
+  - Atualiza incrementalmente o índice.
+- `/codegraph-toggle`
+  - Ativa/desativa a extensão durante a sessão.
+  - Remove/restaura as ferramentas `codegraph_*` do agente.
+  - Pausa/retoma auto-sync e orientação no system prompt.
+  - Estado persiste no branch atual da sessão.
 
 ### Notificações opcionais
 

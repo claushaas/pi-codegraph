@@ -5,6 +5,7 @@
  * - /codegraph-init   : inicializa CodeGraph interativamente (com confirmação)
  * - /codegraph-index  : indexa o projeto (com confirmação)
  * - /codegraph-sync   : atualiza incrementalmente o índice
+ * - /codegraph-toggle : ativa/desativa a extensão pi-codegraph
  */
 
 import type {
@@ -13,6 +14,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 import { hasCodegraph } from "./guidance.js";
+import { isEnabled, toggle } from "./toggle.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -284,6 +286,24 @@ export function registerCodegraphSyncCommand(pi: ExtensionAPI): void {
           `CodeGraph sync failed: ${(err as Error).message}`,
           "error",
         );
+      }
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// /codegraph-toggle
+// ---------------------------------------------------------------------------
+
+export function registerCodegraphToggleCommand(pi: ExtensionAPI): void {
+  pi.registerCommand("codegraph-toggle", {
+    description: "Enable or disable the pi-codegraph extension",
+    handler: async (_args, ctx) => {
+      const current = isEnabled();
+      toggle(pi, ctx);
+      const now = isEnabled();
+      if (now === current) {
+        ctx.ui.notify?.("CodeGraph toggle did not change state.", "info");
       }
     },
   });

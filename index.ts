@@ -23,6 +23,7 @@ import {
   registerCodegraphInitCommand,
   registerCodegraphStatusCommand,
   registerCodegraphSyncCommand,
+  registerCodegraphToggleCommand,
   registerSessionStartStatus,
 } from "./src/commands.js";
 import {
@@ -30,6 +31,7 @@ import {
   CODEGRAPH_READY_GUIDANCE,
   hasCodegraph,
 } from "./src/guidance.js";
+import { isEnabled, restoreFromSession } from "./src/toggle.js";
 import { registerCodegraphAffectedTool } from "./src/tools/affected.js";
 import { registerCodegraphContextTool } from "./src/tools/context.js";
 import { registerCodegraphFilesTool } from "./src/tools/files.js";
@@ -50,10 +52,18 @@ export default function piCodegraph(pi: ExtensionAPI): void {
   registerCodegraphSyncTool(pi);
   registerCodegraphAffectedTool(pi);
 
+  // Restaura estado do toggle no início da sessão
+  pi.on("session_start", async (_event, ctx) => {
+    restoreFromSession(pi, ctx);
+  });
+
   // Fase 6: sincronização automática e orientação contextual do agente
   registerCodegraphAutoSync(pi);
 
   pi.on("before_agent_start", async (_event, ctx) => {
+    // Se a extensão foi desativada, não injeta orientação
+    if (!isEnabled()) return;
+
     const ready = await hasCodegraph(ctx.cwd);
     const guidance = ready
       ? CODEGRAPH_READY_GUIDANCE
@@ -71,5 +81,6 @@ export default function piCodegraph(pi: ExtensionAPI): void {
   registerCodegraphInitCommand(pi);
   registerCodegraphIndexCommand(pi);
   registerCodegraphSyncCommand(pi);
+  registerCodegraphToggleCommand(pi);
   registerSessionStartStatus(pi);
 }

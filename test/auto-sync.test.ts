@@ -62,7 +62,7 @@ async function waitFor(condition: () => boolean): Promise<void> {
 }
 
 async function waitForEventually(condition: () => boolean): Promise<void> {
-  for (let attempt = 0; attempt < 100; attempt++) {
+  for (let attempt = 0; attempt < 200; attempt++) {
     if (condition()) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
@@ -277,11 +277,15 @@ describe("auto sync", () => {
       const mod = await import("../index.js");
       mod.default(pi);
 
-      const sessionStart = (eventHandlers.get("session_start") ?? [])[0];
+      const sessionStartHandlers = eventHandlers.get("session_start") ?? [];
       const sessionShutdown = (eventHandlers.get("session_shutdown") ?? [])[0];
       const ctx = createMockCtx(cwd);
 
-      await sessionStart?.({}, ctx);
+      for (const handler of sessionStartHandlers) {
+        await handler?.({}, ctx);
+      }
+      // Aguarda file watcher do macOS inicializar antes de escrever arquivo
+      await new Promise((resolve) => setTimeout(resolve, 300));
       await writeFile(
         join(cwd, "changed.ts"),
         "export const changed = true;\n",

@@ -14,6 +14,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { getCodegraphInvocation, TIMEOUTS } from "./config.js";
 import { hasCodegraph } from "./guidance.js";
+import { isEnabled } from "./toggle.js";
 
 const MUTATING_TOOLS = new Set(["edit", "write"]);
 const FILE_WATCH_DEBOUNCE_MS = 750;
@@ -93,6 +94,8 @@ async function registerFileWatcher(
   const cwd = ctx.cwd;
   if (state.watchers.has(cwd)) return;
 
+  if (!isEnabled()) return;
+
   const ready = await hasCodegraph(cwd);
   if (!ready) return;
 
@@ -136,6 +139,8 @@ async function runAutoSync(
   state: AutoSyncState,
   reason: "turn_start" | "file_mutation",
 ): Promise<void> {
+  if (!isEnabled()) return;
+
   const cwd = ctx.cwd;
   const ready = await hasCodegraph(cwd);
   if (!ready) return;
